@@ -8,6 +8,8 @@
 #include "chai3d.h"
 #include "MyProxyAlgorithm.h"
 #include "MyMaterial.h"
+#include <iostream>
+
 //------------------------------------------------------------------------------
 #include <GLFW/glfw3.h>
 //------------------------------------------------------------------------------
@@ -92,6 +94,29 @@ int height = 0;
 
 // swap interval for the display context (vertical synchronization)
 int swapInterval = 1;
+
+
+chai3d::cVector3d cameraPosition;
+chai3d::cVector3d cameraLookAt;
+
+
+chai3d::cVector3d devicePosOld;
+
+double workspaceRadius = 0.045;
+
+struct BoundingBox
+{
+	double xMin;
+	double xMax;
+	double yMin;
+	double yMax;
+	double zMin;
+	double zMax;
+};
+
+
+
+
 
 
 //------------------------------------------------------------------------------
@@ -231,9 +256,13 @@ int main(int argc, char* argv[])
     camera = new cCamera(world);
     world->addChild(camera);
 
+
+	cameraPosition = cVector3d(0.1, 0.0, 0.07);
+	cameraLookAt = cVector3d(0.0, 0.0, 0.0);
+
     // position and orient the camera
-    camera->set( cVector3d (0.1, 0.0, 0.07),    // camera position (eye)
-                 cVector3d (0.0, 0.0, 0.0),    // look at position (target)
+    camera->set( cameraPosition,    // camera position (eye)
+                 cameraLookAt,    // look at position (target)
                  cVector3d (0.0, 0.0, 1.0));   // direction of the (up) vector
 
     // set the near and far clipping planes of the camera
@@ -275,6 +304,18 @@ int main(int argc, char* argv[])
 
     // use a point avatar for this scene
     double toolRadius = 0.0;
+
+
+	/*
+		Initialize a mathematical constraint for the workspace in the form of a bounding box.
+	
+		This will be used to guide the movement of the camera and tool position in an
+		implementation of rate control for workspace management.
+	*/
+	BoundingBox workspace;
+	workspace = { -0.045, 0.045, -0.045, 0.045, -0.045, 0.045 };
+
+
 
     //--------------------------------------------------------------------------
     // [CPSC.86] TEXTURED OBJECTS
@@ -561,7 +602,8 @@ void updateHaptics(void)
         /////////////////////////////////////////////////////////////////////
 
         // read position 
-        cVector3d position;
+		cVector3d toolPos = tool->getLocalPos();
+		cVector3d position;
         hapticDevice->getPosition(position);
 
         // read orientation 
@@ -575,12 +617,42 @@ void updateHaptics(void)
 
         world->computeGlobalPositions();
 
-
         /////////////////////////////////////////////////////////////////////
         // UPDATE 3D CURSOR MODEL
         /////////////////////////////////////////////////////////////////////
 
         tool->updateFromDevice();
+
+
+		/////////////////////////////////////////////////////////////////////
+		// UPDATE CAMERA WITH RESPECT TO AVATAR POSITION
+		/////////////////////////////////////////////////////////////////////
+
+
+		chai3d::cVector3d positionDirection = position;
+		positionDirection.normalize();
+		if (position.length() > workspaceRadius)
+		{
+			tool->setLocalPos(tool->getLocalPos() + positionDirection * (position.length() - workspaceRadius));
+
+			// A) The camera mimics the avatar's movement along the x and y plane.
+			cVector3d toolPosDxDy = tool->getLocalPos() - toolPos;
+			toolPosDxDy = cVector3d(toolPosDxDy.x(), toolPosDxDy.y(), 0.0);
+
+			cameraPosition = cameraPosition + toolPosDxDy;
+			cameraLookAt = cameraLookAt + toolPosDxDy;
+
+			camera->set
+			(
+				cameraPosition,				// camera position (eye)
+				cameraLookAt,				// look at position (target)
+				cVector3d(0.0, 0.0, 1.0)	// direction of the (up) vector
+			);
+			// End A)
+		}
+		
+
+		
 
 
         /////////////////////////////////////////////////////////////////////
