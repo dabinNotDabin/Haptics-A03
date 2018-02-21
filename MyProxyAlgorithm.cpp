@@ -35,7 +35,7 @@ using namespace chai3d;
 
     Useful variables to read:
         m_deviceGlobalPos   - current position of haptic device
-        m_proxyGlboalPos    - computed position of the constrained proxy
+        m_proxyGlobalPos    - computed position of the constrained proxy
         m_numCollisionEvents- the number of surfaces constraining the proxy
         m_collisionRecorderConstraint0,1,2
                             - up to three cCollisionRecorder structures with
@@ -63,7 +63,50 @@ void MyProxyAlgorithm::updateForce()
 
         if (MyMaterialPtr material = std::dynamic_pointer_cast<MyMaterial>(c0->m_object->m_material))
         {
-            // you can access your custom material properties here
+			material->setUseHapticShading(true);
+
+			std::cout << "Here\n";
+
+			// you can access your custom material properties here
+			material->m_myMaterialProperty;
+
+			c0->m_globalNormal;
+			c0->m_triangles;
+
+			c0->m_object->getBoundaryMax();
+			c0->m_object->getBoundaryMin();
+			c0->m_object->setShowBoundaryBox(true, false);
+
+			int triangleIndex0 = c0->m_index;
+			int vertexIndex0 = c0->m_triangles->getVertexIndex0(triangleIndex0);
+
+			cColorf color = c0->m_object->m_texture->m_color;
+			
+			cImagePtr image = c0->m_object->m_texture->m_image;
+			
+			double pixelX, pixelY;
+			cColorb pixelColor;
+			cVector3d texCoord;
+			texCoord = c0->m_triangles->getTexCoordAtPosition(c0->m_index, c0->m_localPos);
+			image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
+			image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
+
+
+			// For bumps
+			//	Say black is height 0 and white is height 1.
+			//	Take the degree of whiteness normalize(R, G, B), then take (R + G + B) / 3.0
+			//	Perturbation factor = min(whiteness, 1.0 - whiteness)
+			//	Perturb normal towards tangent at contact point by a degree of the computed factor
+			//	Normalizing the color values may not work.
+			//		Might have to find max values through testing to use for scaling the colors.
+			//		Where objects are initialized and textures applied, set to white to test max values
+
+
+
+//			m_debugColor.
+
+			m_debugVector = c0->m_triangles->m_vertices->getTexCoord(vertexIndex0);
+			m_debugVector = c0->m_triangles->m_vertices->getTangent(vertexIndex0);
         }
     }
 }

@@ -10,19 +10,15 @@
     <ClCompile Include="application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ImplicitMesh.cpp">
+    <ClCompile Include="MyMaterial.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MarchingSource.cpp">
+    <ClCompile Include="MyProxyAlgorithm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ImplicitMesh.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MarchingSource.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
+    <ClInclude Include="MyMaterial.h" />
+    <ClInclude Include="MyProxyAlgorithm.h" />
   </ItemGroup>
 </Project>
