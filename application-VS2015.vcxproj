@@ -99,7 +99,7 @@
       <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>../../src;../../external/Eigen;../../external/glew/include;../../extras/glfw/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src;../../external/Eigen;../../external/glew/include;../../extras/glfw/include;%(AdditionalIncludeDirectories);C:/UofC/CPSC599/CHAI3D/src;C:/UofC/CPSC599/CHAI3D/external/Eigen;C:/UofC/CPSC599/CHAI3D/external/glew/include;C:/UofC/CPSC599/CHAI3D/extras/glfw/include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_MSVC;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>

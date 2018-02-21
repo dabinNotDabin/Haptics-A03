@@ -28,12 +28,14 @@ public:
 
     //! Shared MyMaterial allocator.
     static MyMaterialPtr create() { return (std::make_shared<MyMaterial>()); }
-
+	
 
     //--------------------------------------------------------------------------
     // [CPSC.86] CUSTOM MATERIAL PROPERTIES
     //--------------------------------------------------------------------------
 
+	double baseStaticFriction = 0.0;
+	double baseDynamicFriction = 0.0;
     double m_myMaterialProperty;
 };
 

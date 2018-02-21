@@ -361,6 +361,23 @@ int main(int argc, char* argv[])
             mesh->m_texture = albedoMap;
             mesh->setUseTexture(true);
 
+
+
+			cImagePtr normalMap;
+			int pos = textureFiles[i][j].find_last_of('_');
+			if (pos < textureFiles[i][j].length() && pos >= 0)
+			{
+				string fileBeginning = textureFiles[i][j].substr(0, pos);
+				normalMap->loadFromFile("images/" + fileBeginning + "_normal.jpg");
+				mesh->m_normalMap->setImage(normalMap);
+
+				mesh->m_normalMap->setWrapModeS(GL_REPEAT);
+				mesh->m_normalMap->setWrapModeT(GL_REPEAT);
+				mesh->m_normalMap->setUseMipmaps(true);
+			}
+
+			mesh->setShowNormals(true);
+
             // set the position of this object
             double xpos = -objectSpacing + i * objectSpacing;
             double ypos = -objectSpacing + j * objectSpacing;
