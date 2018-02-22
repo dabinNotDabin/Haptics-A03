@@ -36,6 +36,12 @@ public:
 
 	double baseStaticFriction = 0.0;
 	double baseDynamicFriction = 0.0;
+
+	double maxStaticFriction = 2.0;
+	double maxDynamicFriction = 1.7;
+
+
+
     double m_myMaterialProperty;
 };
 

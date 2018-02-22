@@ -186,86 +186,91 @@ void MyProxyAlgorithm::testFrictionAndMoveProxy(const cVector3d& a_goal,
                                                 cGenericObject* a_parent)
 {
 	cCollisionEvent* c0 = &m_collisionRecorderConstraint0.m_nearestCollision;
-
-
-	std::string textureFilename;
-	cImagePtr image;
-	textureFilename = image->getFilename();
-
-
-	cMultiMesh* object = (cMultiMesh*)a_parent;
-	cMesh* mesh = object->getMesh(0);
-
-	double pixelX, pixelY;
-	cColorb pixelColor;
-	cVector3d texCoord;
-	double r, g, b;
-
-	texCoord = c0->m_triangles->getTexCoordAtPosition(c0->m_index, c0->m_localPos);
-
-
-	if (textureFilename == "friction.jpg")
+	
+	if (c0)
 	{
+		MyMaterialPtr material = std::dynamic_pointer_cast<MyMaterial>(c0->m_object->m_material);
+		std::string textureFilename;
+		cImagePtr image;
+		textureFilename = image->getFilename();
+
+
+		cMultiMesh* object = (cMultiMesh*)a_parent;
+		cMesh* mesh = object->getMesh(0);
+
+		double pixelX, pixelY;
+		cColorb pixelColor;
+		cVector3d texCoord;
+		double r, g, b;
+
 		texCoord = c0->m_triangles->getTexCoordAtPosition(c0->m_index, c0->m_localPos);
-		image = a_parent->m_texture->m_image;
-		image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
-		image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
 
-		m_roughnessAtCollision = pixelColor;
 
-		// High blue AND low red/green = low friction;
-		// Low blue AND high red/green = high friction;
-		r = pixelColor.getR();
-		g = pixelColor.getG();
-		b = pixelColor.getB();
-
-		double frictionModifier;
-		double baseStaticFriction = 1.5 * (r + g - b);
-		double baseDynamicFriction = (r + g - b);
-		frictionModifier = (((r + g) > 1.0) ? (r + g) : 1.0);
-
-//		double currentStatic = a_parent->m_material->getStaticFriction();
-//		double currentDynamic = a_parent->m_material->getDynamicFriction();
-
-		baseStaticFriction *= frictionModifier;
-		baseDynamicFriction *= frictionModifier;
-
-		baseStaticFriction = ((baseStaticFriction >= 0.0) ? baseStaticFriction : 0.0);
-		baseDynamicFriction = ((baseDynamicFriction >= 0.0) ? baseDynamicFriction : 0.0);
-
-		a_parent->setFriction(baseStaticFriction * frictionModifier, baseDynamicFriction * frictionModifier, true);
-	}
-	else if (textureFilename != "bumps.png")
-	{
-		int pos = textureFilename.find_last_of('_');
-		if (pos < textureFilename.length() && pos >= 0)
+		if (textureFilename == "friction.jpg")
 		{
-			std::string fileBeginning = textureFilename.substr(0, pos);
-			cTexture2dPtr roughnessMap = cTexture2d::create();
-			roughnessMap->loadFromFile("images/" + fileBeginning + "_roughness.jpg");
-			roughnessMap->setWrapModeS(GL_REPEAT);
-			roughnessMap->setWrapModeT(GL_REPEAT);
-			roughnessMap->setUseMipmaps(true);
+			texCoord = c0->m_triangles->getTexCoordAtPosition(c0->m_index, c0->m_localPos);
+			image = a_parent->m_texture->m_image;
+			image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
+			image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
 
-			roughnessMap->m_image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
-			roughnessMap->m_image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
+			m_roughnessAtCollision = pixelColor;
 
+			// High blue AND low red/green = low friction;
+			// Low blue AND high red/green = high friction;
 			r = pixelColor.getR();
 			g = pixelColor.getG();
 			b = pixelColor.getB();
 
-			
-			double maxStaticFriction = 2.0;
-			double maxDynamicFriction = 1.5;
-			double roughness = (r + g + b) / 3.0;
+			double frictionModifier;
+			double baseStaticFriction = 1.5 * (r + g - b);
+			double baseDynamicFriction = (r + g - b);
+			frictionModifier = (((r + g) > 1.0) ? (r + g) : 1.0);
 
-			a_parent->setFriction(maxStaticFriction * roughness, maxDynamicFriction * roughness, true);
+			//		double currentStatic = a_parent->m_material->getStaticFriction();
+			//		double currentDynamic = a_parent->m_material->getDynamicFriction();
+
+			baseStaticFriction *= frictionModifier;
+			baseDynamicFriction *= frictionModifier;
+
+			baseStaticFriction = ((baseStaticFriction >= 0.0) ? baseStaticFriction : 0.0);
+			baseDynamicFriction = ((baseDynamicFriction >= 0.0) ? baseDynamicFriction : 0.0);
+
+			a_parent->setFriction(baseStaticFriction * frictionModifier, baseDynamicFriction * frictionModifier, true);
 		}
-		else
+		else if (textureFilename != "bumps.png")
 		{
-			std::cout << "Failure loading roughness map.\n";
+			int pos = textureFilename.find_last_of('_');
+			if (pos < textureFilename.length() && pos >= 0)
+			{
+				std::string fileBeginning = textureFilename.substr(0, pos);
+				cTexture2dPtr roughnessMap = cTexture2d::create();
+				roughnessMap->loadFromFile("images/" + fileBeginning + "_roughness.jpg");
+				roughnessMap->setWrapModeS(GL_REPEAT);
+				roughnessMap->setWrapModeT(GL_REPEAT);
+				roughnessMap->setUseMipmaps(true);
+
+				roughnessMap->m_image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
+				roughnessMap->m_image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
+
+				r = pixelColor.getR();
+				g = pixelColor.getG();
+				b = pixelColor.getB();
+
+//				material->maxStaticFriction
+
+				double maxStaticFriction = 2.0;
+				double maxDynamicFriction = 1.5;
+				double roughness = (r + g + b) / 3.0;
+
+				a_parent->setFriction(maxStaticFriction * roughness, maxDynamicFriction * roughness, true);
+			}
+			else
+			{
+				std::cout << "Failure loading roughness map.\n";
+			}
 		}
 	}
+
 
 	cAlgorithmFingerProxy::testFrictionAndMoveProxy(a_goal, a_proxy, a_normal, a_parent);
 }
