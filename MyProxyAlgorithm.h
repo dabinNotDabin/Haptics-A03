@@ -23,10 +23,18 @@
 
 class MyProxyAlgorithm : public chai3d::cAlgorithmFingerProxy
 {
+public:
+	chai3d::cVector3d m_debugVector;
+	chai3d::cColorb m_colorAtCollision;
+	chai3d::cColorb m_roughnessAtCollision;
+	chai3d::cColorb m_heightAtCollision;
+	chai3d::cColorb m_normalColorAtCollision;
+
 protected:
 
-	chai3d::cVector3d m_debugVector;
-	chai3d::cColorf m_debugColor;
+
+
+
 
     //! This method computes the resulting force which will be sent to the haptic device.
     virtual void updateForce();

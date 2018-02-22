@@ -58,6 +58,18 @@ cGenericHapticDevicePtr hapticDevice;
 
 // a label to display the rates [Hz] at which the simulation is running
 cLabel* labelRates;
+cLabel* colorCollisionLabel;
+cLabel* heightCollisionLabel;
+cLabel* roughnessCollisionLabel;
+cLabel* normalCollisionLabel;
+
+
+
+
+
+
+
+
 
 // a small sphere (cursor) representing the haptic device 
 cToolCursor* tool;
@@ -431,6 +443,21 @@ int main(int argc, char* argv[])
     labelRates->m_fontColor.setWhite();
     camera->m_frontLayer->addChild(labelRates);
 
+	colorCollisionLabel = new cLabel(font);
+	colorCollisionLabel->m_fontColor.setWhite();
+	camera->m_frontLayer->addChild(colorCollisionLabel);
+
+	heightCollisionLabel = new cLabel(font);
+	heightCollisionLabel->m_fontColor.setWhite();
+	camera->m_frontLayer->addChild(heightCollisionLabel);
+
+	roughnessCollisionLabel = new cLabel(font);
+	roughnessCollisionLabel->m_fontColor.setWhite();
+	camera->m_frontLayer->addChild(roughnessCollisionLabel);
+
+	normalCollisionLabel = new cLabel(font);
+	normalCollisionLabel->m_fontColor.setWhite();
+	camera->m_frontLayer->addChild(normalCollisionLabel);
 
     //--------------------------------------------------------------------------
     // START SIMULATION
@@ -582,6 +609,43 @@ void updateGraphics(void)
 
     // update position of label
     labelRates->setLocalPos((int)(0.5 * (width - labelRates->getWidth())), 15);
+
+	cColorb color;
+
+	color = proxyAlgorithm->m_colorAtCollision;
+	colorCollisionLabel->setText
+	(
+		"Color at collision: " +
+		to_string(color.getR()) + ", " + to_string(color.getG()) + ", " + to_string(color.getB())
+	);
+	colorCollisionLabel->setLocalPos((int)(0.2 * (width - colorCollisionLabel->getWidth())), height - 15);
+
+
+	color = proxyAlgorithm->m_heightAtCollision;
+	heightCollisionLabel->setText
+	(
+		"Height at collision: " +
+		to_string(color.getR()) + ", " + to_string(color.getG()) + ", " + to_string(color.getB())
+	);
+	heightCollisionLabel->setLocalPos((int)(0.4 * (width - heightCollisionLabel->getWidth())), height - 15);
+
+
+	color = proxyAlgorithm->m_roughnessAtCollision;
+	roughnessCollisionLabel->setText
+	(
+		"Roughness at collision: " +
+		to_string(color.getR()) + ", " + to_string(color.getG()) + ", " + to_string(color.getB())
+	);
+	roughnessCollisionLabel->setLocalPos((int)(0.6 * (width - roughnessCollisionLabel->getWidth())), height - 15);
+
+
+	color = proxyAlgorithm->m_normalColorAtCollision;
+	normalCollisionLabel->setText
+	(
+		"Normal at collision: " +
+		to_string(color.getR()) + ", " + to_string(color.getG()) + ", " + to_string(color.getB())
+	);
+	normalCollisionLabel->setLocalPos((int)(0.8 * (width - normalCollisionLabel->getWidth())), height - 15);
 
 
     /////////////////////////////////////////////////////////////////////

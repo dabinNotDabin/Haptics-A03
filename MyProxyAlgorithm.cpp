@@ -90,6 +90,8 @@ void MyProxyAlgorithm::updateForce()
 				image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
 				image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
 
+				m_colorAtCollision = pixelColor;
+
 				double height = (pixelColor.getR() + pixelColor.getG() + pixelColor.getB()) / 255.0*3.0;
 				double blendFactor = (height < (1.0 - height) ? height : (1.0 - height));
 
@@ -118,8 +120,11 @@ void MyProxyAlgorithm::updateForce()
 				image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
 				image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
 
+				m_normalColorAtCollision = pixelColor;
+
 				perturbedNormal = cVector3d(pixelColor.getR() / 255.0, pixelColor.getG() / 255.0, pixelColor.getB() / 255.0);
 
+				double height = 0.0;
 				int pos = textureFilename.find_last_of('_');
 				if (pos < textureFilename.length() && pos >= 0)
 				{
@@ -133,16 +138,18 @@ void MyProxyAlgorithm::updateForce()
 					heightMap->m_image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
 					heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
 
+					m_heightAtCollision = pixelColor;
+
 					double r, g, b;
 					r = pixelColor.getR();
 					g = pixelColor.getG();
 					b = pixelColor.getB();
 
-					double height = (r + g + b) / 255.0*3.0;
-
-					perturbedNormal.normalize();
-					m_lastGlobalForce = perturbedNormal * m_lastGlobalForce.length() + perturbedNormal * height;
+					height = (r + g + b) / 255.0*3.0;
 				}
+
+				perturbedNormal.normalize();
+				m_lastGlobalForce = perturbedNormal * m_lastGlobalForce.length() + perturbedNormal * height;
 			}
 		}
     }
@@ -203,6 +210,8 @@ void MyProxyAlgorithm::testFrictionAndMoveProxy(const cVector3d& a_goal,
 		image = a_parent->m_texture->m_image;
 		image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
 		image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
+
+		m_roughnessAtCollision = pixelColor;
 
 		// High blue AND low red/green = low friction;
 		// Low blue AND high red/green = high friction;
