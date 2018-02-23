@@ -1,6 +1,6 @@
 //==============================================================================
 /*
-    \author    Your Name
+\author    Your Name
 */
 //==============================================================================
 
@@ -23,10 +23,10 @@ using namespace std;
 
 // stereo Mode
 /*
-    C_STEREO_DISABLED:            Stereo is disabled 
-    C_STEREO_ACTIVE:              Active stereo for OpenGL NVDIA QUADRO cards
-    C_STEREO_PASSIVE_LEFT_RIGHT:  Passive stereo where L/R images are rendered next to each other
-    C_STEREO_PASSIVE_TOP_BOTTOM:  Passive stereo where L/R images are rendered above each other
+C_STEREO_DISABLED:            Stereo is disabled
+C_STEREO_ACTIVE:              Active stereo for OpenGL NVDIA QUADRO cards
+C_STEREO_PASSIVE_LEFT_RIGHT:  Passive stereo where L/R images are rendered next to each other
+C_STEREO_PASSIVE_TOP_BOTTOM:  Passive stereo where L/R images are rendered above each other
 */
 cStereoMode stereoMode = C_STEREO_DISABLED;
 
@@ -58,18 +58,6 @@ cGenericHapticDevicePtr hapticDevice;
 
 // a label to display the rates [Hz] at which the simulation is running
 cLabel* labelRates;
-cLabel* colorCollisionLabel;
-cLabel* heightCollisionLabel;
-cLabel* roughnessCollisionLabel;
-cLabel* normalCollisionLabel;
-
-
-
-
-
-
-
-
 
 // a small sphere (cursor) representing the haptic device 
 cToolCursor* tool;
@@ -99,7 +87,7 @@ cThread* hapticsThread;
 GLFWwindow* window = NULL;
 
 // current width of window
-int width  = 0;
+int width = 0;
 
 // current height of window
 int height = 0;
@@ -114,20 +102,21 @@ chai3d::cVector3d cameraLookAt;
 
 chai3d::cVector3d devicePosOld;
 
-double workspaceRadius = 0.045;
-
-struct BoundingBox
-{
-	double xMin;
-	double xMax;
-	double yMin;
-	double yMax;
-	double zMin;
-	double zMax;
-};
+double workspaceRadius = 0.0375;
 
 
 
+
+cLabel* colorCollisionLabel;
+cLabel* heightCollisionLabel;
+cLabel* roughnessCollisionLabel;
+cLabel* normalCollisionLabel;
+
+
+cLabel *toolPosLabel;
+cLabel *hapticDeviceLabel;
+cLabel *overlapLabel;
+cLabel *infoLabel;
 
 
 
@@ -156,292 +145,333 @@ void close(void);
 
 //==============================================================================
 /*
-    TEMPLATE:    application.cpp
+TEMPLATE:    application.cpp
 
-    Description of your application.
+Description of your application.
 */
 //==============================================================================
 
 int main(int argc, char* argv[])
 {
-    //--------------------------------------------------------------------------
-    // INITIALIZATION
-    //--------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	// INITIALIZATION
+	//--------------------------------------------------------------------------
 
-    cout << endl;
-    cout << "-----------------------------------" << endl;
-    cout << "CHAI3D" << endl;
-    cout << "-----------------------------------" << endl << endl << endl;
-    cout << "Keyboard Options:" << endl << endl;
-    cout << "[f] - Enable/Disable full screen mode" << endl;
-    cout << "[m] - Enable/Disable vertical mirroring" << endl;
-    cout << "[q] - Exit application" << endl;
-    cout << endl << endl;
+	cout << endl;
+	cout << "-----------------------------------" << endl;
+	cout << "CHAI3D" << endl;
+	cout << "-----------------------------------" << endl << endl << endl;
+	cout << "Keyboard Options:" << endl << endl;
+	cout << "[f] - Enable/Disable full screen mode" << endl;
+	cout << "[m] - Enable/Disable vertical mirroring" << endl;
+	cout << "[q] - Exit application" << endl;
+	cout << endl << endl;
 
 
-    //--------------------------------------------------------------------------
-    // OPENGL - WINDOW DISPLAY
-    //--------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	// OPENGL - WINDOW DISPLAY
+	//--------------------------------------------------------------------------
 
-    // initialize GLFW library
-    if (!glfwInit())
-    {
-        cout << "failed initialization" << endl;
-        cSleepMs(1000);
-        return 1;
-    }
+	// initialize GLFW library
+	if (!glfwInit())
+	{
+		cout << "failed initialization" << endl;
+		cSleepMs(1000);
+		return 1;
+	}
 
-    // set error callback
-    glfwSetErrorCallback(errorCallback);
+	// set error callback
+	glfwSetErrorCallback(errorCallback);
 
-    // compute desired size of window
-    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    int w = 0.8 * mode->height;
-    int h = 0.5 * mode->height;
-    int x = 0.5 * (mode->width - w);
-    int y = 0.5 * (mode->height - h);
+	// compute desired size of window
+	const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+	int w = 0.8 * mode->height;
+	int h = 0.5 * mode->height;
+	int x = 0.5 * (mode->width - w);
+	int y = 0.5 * (mode->height - h);
 
-    // set OpenGL version
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+	// set OpenGL version
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 
-    // set active stereo mode
-    if (stereoMode == C_STEREO_ACTIVE)
-    {
-        glfwWindowHint(GLFW_STEREO, GL_TRUE);
-    }
-    else
-    {
-        glfwWindowHint(GLFW_STEREO, GL_FALSE);
-    }
+	// set active stereo mode
+	if (stereoMode == C_STEREO_ACTIVE)
+	{
+		glfwWindowHint(GLFW_STEREO, GL_TRUE);
+	}
+	else
+	{
+		glfwWindowHint(GLFW_STEREO, GL_FALSE);
+	}
 
-    // create display context
-    window = glfwCreateWindow(w, h, "CHAI3D", NULL, NULL);
-    if (!window)
-    {
-        cout << "failed to create window" << endl;
-        cSleepMs(1000);
-        glfwTerminate();
-        return 1;
-    }
+	// create display context
+	window = glfwCreateWindow(w, h, "CHAI3D", NULL, NULL);
+	if (!window)
+	{
+		cout << "failed to create window" << endl;
+		cSleepMs(1000);
+		glfwTerminate();
+		return 1;
+	}
 
-    // get width and height of window
-    glfwGetWindowSize(window, &width, &height);
+	// get width and height of window
+	glfwGetWindowSize(window, &width, &height);
 
-    // set position of window
-    glfwSetWindowPos(window, x, y);
+	// set position of window
+	glfwSetWindowPos(window, x, y);
 
-    // set key callback
-    glfwSetKeyCallback(window, keyCallback);
+	// set key callback
+	glfwSetKeyCallback(window, keyCallback);
 
-    // set resize callback
-    glfwSetWindowSizeCallback(window, windowSizeCallback);
+	// set resize callback
+	glfwSetWindowSizeCallback(window, windowSizeCallback);
 
-    // set current display context
-    glfwMakeContextCurrent(window);
+	// set current display context
+	glfwMakeContextCurrent(window);
 
-    // sets the swap interval for the current display context
-    glfwSwapInterval(swapInterval);
+	// sets the swap interval for the current display context
+	glfwSwapInterval(swapInterval);
 
 #ifdef GLEW_VERSION
-    // initialize GLEW library
-    if (glewInit() != GLEW_OK)
-    {
-        cout << "failed to initialize GLEW library" << endl;
-        glfwTerminate();
-        return 1;
-    }
+	// initialize GLEW library
+	if (glewInit() != GLEW_OK)
+	{
+		cout << "failed to initialize GLEW library" << endl;
+		glfwTerminate();
+		return 1;
+	}
 #endif
 
 
-    //--------------------------------------------------------------------------
-    // WORLD - CAMERA - LIGHTING
-    //--------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	// WORLD - CAMERA - LIGHTING
+	//--------------------------------------------------------------------------
 
-    // create a new world.
-    world = new cWorld();
+	// create a new world.
+	world = new cWorld();
 
-    // set the background color of the environment
-    world->m_backgroundColor.setBlack();
+	// set the background color of the environment
+	world->m_backgroundColor.setBlack();
 
-    // create a camera and insert it into the virtual world
-    camera = new cCamera(world);
-    world->addChild(camera);
+	// create a camera and insert it into the virtual world
+	camera = new cCamera(world);
+	world->addChild(camera);
 
 
 	cameraPosition = cVector3d(0.1, 0.0, 0.07);
 	cameraLookAt = cVector3d(0.0, 0.0, 0.0);
 
-    // position and orient the camera
-    camera->set( cameraPosition,    // camera position (eye)
-                 cameraLookAt,    // look at position (target)
-                 cVector3d (0.0, 0.0, 1.0));   // direction of the (up) vector
+	// position and orient the camera
+	camera->set(cameraPosition,    // camera position (eye)
+		cameraLookAt,    // look at position (target)
+		cVector3d(0.0, 0.0, 1.0));   // direction of the (up) vector
 
-    // set the near and far clipping planes of the camera
-    camera->setClippingPlanes(0.01, 1.0);
+									 // set the near and far clipping planes of the camera
+	camera->setClippingPlanes(0.01, 1.0);
 
-    // set stereo mode
-    camera->setStereoMode(stereoMode);
+	// set stereo mode
+	camera->setStereoMode(stereoMode);
 
-    // set stereo eye separation and focal length (applies only if stereo is enabled)
-    camera->setStereoEyeSeparation(0.01);
-    camera->setStereoFocalLength(0.5);
+	// set stereo eye separation and focal length (applies only if stereo is enabled)
+	camera->setStereoEyeSeparation(0.01);
+	camera->setStereoFocalLength(0.5);
 
-    // set vertical mirrored display mode
-    camera->setMirrorVertical(mirroredDisplay);
+	// set vertical mirrored display mode
+	camera->setMirrorVertical(mirroredDisplay);
 
-    // create a directional light source
-    light = new cSpotLight(world);
+	// create a directional light source
+	light = new cSpotLight(world);
 
-    // insert light source inside world
-    world->addChild(light);
+	// insert light source inside world
+	world->addChild(light);
 
-    // enable light source
-    light->setEnabled(true);
+	// enable light source
+	light->setEnabled(true);
 
-    // position the light source
-    light->setLocalPos(0.7, 0.3, 1.0);
+	// position the light source
+	light->setLocalPos(0.7, 0.3, 1.0);
 
-    // define the direction of the light beam
-    light->setDir(-0.5,-0.2,-0.8);
+	// define the direction of the light beam
+	light->setDir(-0.5, -0.2, -0.8);
 
-    // enable this light source to generate shadows
-    light->setShadowMapEnabled(true);
+	// enable this light source to generate shadows
+	light->setShadowMapEnabled(true);
 
-    // set the resolution of the shadow map
-    light->m_shadowMap->setQualityHigh();
+	// set the resolution of the shadow map
+	light->m_shadowMap->setQualityHigh();
 
-    // set light cone half angle
-    light->setCutOffAngleDeg(10);
+	// set light cone half angle
+	light->setCutOffAngleDeg(10);
 
-    // use a point avatar for this scene
-    double toolRadius = 0.0;
+	// use a point avatar for this scene
+	double toolRadius = 0.0;
 
 
 	/*
-		Initialize a mathematical constraint for the workspace in the form of a bounding box.
-	
-		This will be used to guide the movement of the camera and tool position in an
-		implementation of rate control for workspace management.
+	Initialize a mathematical constraint for the workspace in the form of a bounding box.
+
+	This will be used to guide the movement of the camera and tool position in an
+	implementation of rate control for workspace management.
 	*/
-	BoundingBox workspace;
-	workspace = { -0.045, 0.045, -0.045, 0.045, -0.045, 0.045 };
+	
 
 
 
-    //--------------------------------------------------------------------------
-    // [CPSC.86] TEXTURED OBJECTS
-    //--------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	// [CPSC.86] TEXTURED OBJECTS
+	//--------------------------------------------------------------------------
 
-    const double objectSpacing = 0.09;
+	const double objectSpacing = 0.09;
 
-    const std::string textureFiles[3][3] = {
-        { "Organic_Scales_001_colour.jpg", "unknown.png", "Fabric_002_colour.jpg" },
-        { "bumps.png", "Metal_plate_001_colour.jpg", "friction.jpg" },
-        { "Leather_padded_001_colour.jpg", "unknown.png", "Cork_001_colour.jpg" }
-    };
+	const std::string textureFiles[3][3] = 
+	{
+		{ "Organic_Scales_001_colour.jpg", "unknown.png", "Fabric_002_colour.jpg" },
+		{ "bumps.png", "Metal_plate_001_colour.jpg", "friction.jpg" },
+		{ "Leather_padded_001_colour.jpg", "unknown.png", "Cork_001_colour.jpg" }
+	};
 
-    for (int i = 0; i < 3; ++i)
-    {
-        for (int j = 0; j < 3; ++j)
-        {
-            objects[i][j] = new cMultiMesh();
-            cMultiMesh* object = objects[i][j];
+	const std::string normalMaps[3][3] =
+	{
+		{ "Organic_Scales_001_normal.jpg", "unknown.png", "Fabric_002_normal.jpg" },
+		{ "bumps.png", "Metal_plate_001_normal.jpg", "friction.jpg" },
+		{ "Leather_padded_001_normal.jpg", "unknown.png", "Cork_001_normal.jpg" }
+	};
 
-            // load geometry from file and compute additional properties
-            object->loadFromFile("tray.obj");
-            object->createAABBCollisionDetector(toolRadius);
-            object->computeBTN();
 
-            // obtain the first (and only) mesh from the object
-            cMesh* mesh = object->getMesh(0);
+	const std::string heightMaps[3][3] =
+	{
+		{ "Organic_Scales_001_height.jpg", "unknown.png", "Fabric_002_height.jpg" },
+		{ "bumps.png", "Metal_plate_001_height.jpg", "friction.jpg" },
+		{ "Leather_padded_001_height.jpg", "unknown.png", "Cork_001_height.jpg" }
+	};
 
-            // replace the object's material with a custom one
-            mesh->m_material = MyMaterial::create();
-            mesh->m_material->setWhite();
-            mesh->m_material->setUseHapticShading(true);
-            object->setStiffness(2000.0, true);
 
-            // create a colour texture map for this mesh object
-            cTexture2dPtr albedoMap = cTexture2d::create();
-            albedoMap->loadFromFile("images/" + textureFiles[i][j]);
-            albedoMap->setWrapModeS(GL_REPEAT);
-            albedoMap->setWrapModeT(GL_REPEAT);
-            albedoMap->setUseMipmaps(true);
-
-            // assign textures to the mesh
-            mesh->m_texture = albedoMap;
-            mesh->setUseTexture(true);
+	const std::string roughnessMaps[3][3] =
+	{
+		{ "Organic_Scales_001_roughness.jpg", "unknown.png", "Fabric_002_roughness.jpg" },
+		{ "bumps.png", "Metal_plate_001_roughness.jpg", "friction.jpg" },
+		{ "Leather_padded_001_roughness.jpg", "unknown.png", "Cork_001_roughness.jpg" }
+	};
 
 
 
-			cImagePtr normalMap;
-			int pos = textureFiles[i][j].find_last_of('_');
-			if (pos < textureFiles[i][j].length() && pos >= 0)
-			{
-				string fileBeginning = textureFiles[i][j].substr(0, pos);
-				normalMap->loadFromFile("images/" + fileBeginning + "_normal.jpg");
-				mesh->m_normalMap->setImage(normalMap);
+	for (int i = 0; i < 3; ++i)
+	{
+		for (int j = 0; j < 3; ++j)
+		{
+			objects[i][j] = new cMultiMesh();
+			cMultiMesh* object = objects[i][j];
 
-				mesh->m_normalMap->setWrapModeS(GL_REPEAT);
-				mesh->m_normalMap->setWrapModeT(GL_REPEAT);
-				mesh->m_normalMap->setUseMipmaps(true);
-			}
+			// load geometry from file and compute additional properties
+			object->loadFromFile("tray.obj");
+			object->createAABBCollisionDetector(toolRadius);
+			object->computeBTN();
 
-			mesh->setShowNormals(true);
+			// obtain the first (and only) mesh from the object
+			cMesh* mesh = object->getMesh(0);
 
-            // set the position of this object
-            double xpos = -objectSpacing + i * objectSpacing;
-            double ypos = -objectSpacing + j * objectSpacing;
-            object->setLocalPos(xpos, ypos);
+			// replace the object's material with a custom one
+			MyMaterialPtr material = MyMaterial::create();
+			mesh->m_material = material;
+			mesh->m_material->setWhite();
+			mesh->m_material->setUseHapticShading(true);
+			mesh->m_material->setUseHapticTexture(true);
+			object->setStiffness(2000.0, true);
 
-            world->addChild(object);
-        }
-    }
+			// create a colour texture map for this mesh object
+			cTexture2dPtr albedoMap = cTexture2d::create();
+			albedoMap->loadFromFile("images/" + textureFiles[i][j]);
+			albedoMap->setWrapModeS(GL_REPEAT);
+			albedoMap->setWrapModeT(GL_REPEAT);
+			albedoMap->setUseMipmaps(true);
 
-    //--------------------------------------------------------------------------
-    // HAPTIC DEVICE
-    //--------------------------------------------------------------------------
-
-    // create a haptic device handler
-    handler = new cHapticDeviceHandler();
-
-    // get a handle to the first haptic device
-    handler->getDevice(hapticDevice, 0);
-
-    // if the device has a gripper, enable the gripper to simulate a user switch
-    hapticDevice->setEnableGripperUserSwitch(true);
-
-    tool = new cToolCursor(world);
-    world->addChild(tool);
-
-    // [CPSC.86] replace the tool's proxy rendering algorithm with our own
-    proxyAlgorithm = new MyProxyAlgorithm;
-    delete tool->m_hapticPoint->m_algorithmFingerProxy;
-    tool->m_hapticPoint->m_algorithmFingerProxy = proxyAlgorithm;
-
-    tool->m_hapticPoint->m_sphereProxy->m_material->setWhite();
-
-    tool->setRadius(0.001, toolRadius);
-
-    tool->setHapticDevice(hapticDevice);
-
-    tool->setWaitForSmallForce(true);
-
-    tool->start();
+			// assign textures to the mesh
+			mesh->m_texture = albedoMap;
+			mesh->setUseTexture(true);
 
 
-    //--------------------------------------------------------------------------
-    // WIDGETS
-    //--------------------------------------------------------------------------
+			cTexture2dPtr normalMap = cTexture2d::create();
+			normalMap->loadFromFile("images/" + normalMaps[i][j]);
+			normalMap->setWrapModeS(GL_REPEAT);
+			normalMap->setWrapModeT(GL_REPEAT);
+			normalMap->setUseMipmaps(true);
 
-    // create a font
-    cFontPtr font = NEW_CFONTCALIBRI20();
-    
-    // create a label to display the haptic and graphic rates of the simulation
-    labelRates = new cLabel(font);
-    labelRates->m_fontColor.setWhite();
-    camera->m_frontLayer->addChild(labelRates);
+			cTexture2dPtr heightMap = cTexture2d::create();
+			heightMap->loadFromFile("images/" + heightMaps[i][j]);
+			heightMap->setWrapModeS(GL_REPEAT);
+			heightMap->setWrapModeT(GL_REPEAT);
+			heightMap->setUseMipmaps(true);
+
+
+			cTexture2dPtr roughnessMap = cTexture2d::create();
+			roughnessMap->loadFromFile("images/" + roughnessMaps[i][j]);
+			roughnessMap->setWrapModeS(GL_REPEAT);
+			roughnessMap->setWrapModeT(GL_REPEAT);
+			roughnessMap->setUseMipmaps(true);
+
+
+			material->normalMap = normalMap;
+			material->heightMap = heightMap;
+			material->roughnessMap = roughnessMap;
+			material->objectID = i*3 + j;
+			material->baseStaticFriction = 0.5;
+			material->baseDynamicFriction = 0.3;
+
+//			mesh->setShowNormals(true);
+
+			// set the position of this object
+			double xpos = -objectSpacing + i * objectSpacing;
+			double ypos = -objectSpacing + j * objectSpacing;
+			object->setLocalPos(xpos, ypos);
+
+			world->addChild(object);
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	// HAPTIC DEVICE
+	//--------------------------------------------------------------------------
+
+	// create a haptic device handler
+	handler = new cHapticDeviceHandler();
+
+	// get a handle to the first haptic device
+	handler->getDevice(hapticDevice, 0);
+
+	// if the device has a gripper, enable the gripper to simulate a user switch
+	hapticDevice->setEnableGripperUserSwitch(true);
+
+	tool = new cToolCursor(world);
+	world->addChild(tool);
+
+	// [CPSC.86] replace the tool's proxy rendering algorithm with our own
+	proxyAlgorithm = new MyProxyAlgorithm;
+	delete tool->m_hapticPoint->m_algorithmFingerProxy;
+	tool->m_hapticPoint->m_algorithmFingerProxy = proxyAlgorithm;
+
+	tool->m_hapticPoint->m_sphereProxy->m_material->setWhite();
+
+	tool->setRadius(0.001, toolRadius);
+
+	tool->setHapticDevice(hapticDevice);
+
+	tool->setWaitForSmallForce(true);
+
+	tool->start();
+
+
+	//--------------------------------------------------------------------------
+	// WIDGETS
+	//--------------------------------------------------------------------------
+
+	// create a font
+	cFontPtr font = NEW_CFONTCALIBRI20();
+
+	// create a label to display the haptic and graphic rates of the simulation
+	labelRates = new cLabel(font);
+	labelRates->m_fontColor.setWhite();
+	camera->m_frontLayer->addChild(labelRates);
+
 
 	colorCollisionLabel = new cLabel(font);
 	colorCollisionLabel->m_fontColor.setWhite();
@@ -459,156 +489,192 @@ int main(int argc, char* argv[])
 	normalCollisionLabel->m_fontColor.setWhite();
 	camera->m_frontLayer->addChild(normalCollisionLabel);
 
-    //--------------------------------------------------------------------------
-    // START SIMULATION
-    //--------------------------------------------------------------------------
-
-    // create a thread which starts the main haptics rendering loop
-    hapticsThread = new cThread();
-    hapticsThread->start(updateHaptics, CTHREAD_PRIORITY_HAPTICS);
-
-    // setup callback when application exits
-    atexit(close);
 
 
-    //--------------------------------------------------------------------------
-    // MAIN GRAPHIC LOOP
-    //--------------------------------------------------------------------------
 
-    // call window size callback at initialization
-    windowSizeCallback(window, width, height);
+	hapticDeviceLabel = new cLabel(font);
+	hapticDeviceLabel->m_fontColor.setWhite();
+	camera->m_frontLayer->addChild(hapticDeviceLabel);
 
-    // main graphic loop
-    while (!glfwWindowShouldClose(window))
-    {
-        // get width and height of window
-        glfwGetWindowSize(window, &width, &height);
 
-        // render graphics
-        updateGraphics();
+	toolPosLabel = new cLabel(font);
+	toolPosLabel->m_fontColor.setWhite();
+	camera->m_frontLayer->addChild(toolPosLabel);
 
-        // swap buffers
-        glfwSwapBuffers(window);
 
-        // process events
-        glfwPollEvents();
+	overlapLabel = new cLabel(font);
+	overlapLabel->m_fontColor.setWhite();
+	camera->m_frontLayer->addChild(overlapLabel);
 
-        // signal frequency counter
-        freqCounterGraphics.signal(1);
-    }
+	infoLabel = new cLabel(font);
+	infoLabel->m_fontColor.setWhite();
+	camera->m_frontLayer->addChild(infoLabel);
 
-    // close window
-    glfwDestroyWindow(window);
 
-    // terminate GLFW library
-    glfwTerminate();
 
-    // exit
-    return 0;
+
+	//--------------------------------------------------------------------------
+	// START SIMULATION
+	//--------------------------------------------------------------------------
+
+	// create a thread which starts the main haptics rendering loop
+	hapticsThread = new cThread();
+	hapticsThread->start(updateHaptics, CTHREAD_PRIORITY_HAPTICS);
+
+	// setup callback when application exits
+	atexit(close);
+
+
+	//--------------------------------------------------------------------------
+	// MAIN GRAPHIC LOOP
+	//--------------------------------------------------------------------------
+
+	// call window size callback at initialization
+	windowSizeCallback(window, width, height);
+
+	// main graphic loop
+	while (!glfwWindowShouldClose(window))
+	{
+		// get width and height of window
+		glfwGetWindowSize(window, &width, &height);
+
+		// render graphics
+		updateGraphics();
+
+		// swap buffers
+		glfwSwapBuffers(window);
+
+		// process events
+		glfwPollEvents();
+
+		// signal frequency counter
+		freqCounterGraphics.signal(1);
+	}
+
+	// close window
+	glfwDestroyWindow(window);
+
+	// terminate GLFW library
+	glfwTerminate();
+
+	// exit
+	return 0;
 }
 
 //------------------------------------------------------------------------------
 
 void windowSizeCallback(GLFWwindow* a_window, int a_width, int a_height)
 {
-    // update window size
-    width  = a_width;
-    height = a_height;
+	// update window size
+	width = a_width;
+	height = a_height;
 }
 
 //------------------------------------------------------------------------------
 
 void errorCallback(int a_error, const char* a_description)
 {
-    cout << "Error: " << a_description << endl;
+	cout << "Error: " << a_description << endl;
 }
 
 //------------------------------------------------------------------------------
 
 void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, int a_mods)
 {
-    // filter calls that only include a key press
-    if (a_action != GLFW_PRESS)
-    {
-        return;
-    }
+	// filter calls that only include a key press
+	if (a_action != GLFW_PRESS)
+	{
+		return;
+	}
 
-    // option - exit
-    else if ((a_key == GLFW_KEY_ESCAPE) || (a_key == GLFW_KEY_Q))
-    {
-        glfwSetWindowShouldClose(a_window, GLFW_TRUE);
-    }
+	// option - exit
+	else if ((a_key == GLFW_KEY_ESCAPE) || (a_key == GLFW_KEY_Q))
+	{
+		glfwSetWindowShouldClose(a_window, GLFW_TRUE);
+	}
 
-    // option - toggle fullscreen
-    else if (a_key == GLFW_KEY_F)
-    {
-        // toggle state variable
-        fullscreen = !fullscreen;
+	// option - toggle fullscreen
+	else if (a_key == GLFW_KEY_F)
+	{
+		// toggle state variable
+		fullscreen = !fullscreen;
 
-        // get handle to monitor
-        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+		// get handle to monitor
+		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 
-        // get information about monitor
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+		// get information about monitor
+		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
-        // set fullscreen or window mode
-        if (fullscreen)
-        {
-            glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-            glfwSwapInterval(swapInterval);
-        }
-        else
-        {
-            int w = 0.8 * mode->height;
-            int h = 0.5 * mode->height;
-            int x = 0.5 * (mode->width - w);
-            int y = 0.5 * (mode->height - h);
-            glfwSetWindowMonitor(window, NULL, x, y, w, h, mode->refreshRate);
-            glfwSwapInterval(swapInterval);
-        }
-    }
+		// set fullscreen or window mode
+		if (fullscreen)
+		{
+			glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+			glfwSwapInterval(swapInterval);
+		}
+		else
+		{
+			int w = 0.8 * mode->height;
+			int h = 0.5 * mode->height;
+			int x = 0.5 * (mode->width - w);
+			int y = 0.5 * (mode->height - h);
+			glfwSetWindowMonitor(window, NULL, x, y, w, h, mode->refreshRate);
+			glfwSwapInterval(swapInterval);
+		}
+	}
 
-    // option - toggle vertical mirroring
-    else if (a_key == GLFW_KEY_M)
-    {
-        mirroredDisplay = !mirroredDisplay;
-        camera->setMirrorVertical(mirroredDisplay);
-    }
+	// option - toggle vertical mirroring
+	else if (a_key == GLFW_KEY_M)
+	{
+		mirroredDisplay = !mirroredDisplay;
+		camera->setMirrorVertical(mirroredDisplay);
+	}
 }
 
 //------------------------------------------------------------------------------
 
 void close(void)
 {
-    // stop the simulation
-    simulationRunning = false;
+	// stop the simulation
+	simulationRunning = false;
 
-    // wait for graphics and haptics loops to terminate
-    while (!simulationFinished) { cSleepMs(100); }
+	// wait for graphics and haptics loops to terminate
+	while (!simulationFinished) { cSleepMs(100); }
 
-    // close haptic device
-    hapticDevice->close();
+	// close haptic device
+	hapticDevice->close();
 
-    // delete resources
-    delete hapticsThread;
-    delete world;
-    delete handler;
+	// delete resources
+	delete hapticsThread;
+	delete world;
+	delete handler;
 }
 
 //------------------------------------------------------------------------------
 
 void updateGraphics(void)
 {
-    /////////////////////////////////////////////////////////////////////
-    // UPDATE WIDGETS
-    /////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////
+	// UPDATE WIDGETS
+	/////////////////////////////////////////////////////////////////////
 
-    // update haptic and graphic rate data
-    labelRates->setText(cStr(freqCounterGraphics.getFrequency(), 0) + " Hz / " +
-        cStr(freqCounterHaptics.getFrequency(), 0) + " Hz");
+	cVector3d position;
+	hapticDevice->getPosition(position);
 
-    // update position of label
-    labelRates->setLocalPos((int)(0.5 * (width - labelRates->getWidth())), 15);
+	// update haptic and graphic rate data
+	labelRates->setText(cStr(freqCounterGraphics.getFrequency(), 0) + " Hz / " +
+		cStr(freqCounterHaptics.getFrequency(), 0) + " Hz");
+
+	// update position of label
+	labelRates->setLocalPos((int)(0.5 * (width - labelRates->getWidth())), 15);
+
+	position = cVector3d(position.x(), position.y(), 0.0);
+
+	hapticDeviceLabel->setText("Haptic Device: Position / Length / Workspace Radius  --  " + position.str() + " // " + to_string(position.length()) + " // " + to_string(workspaceRadius));
+	hapticDeviceLabel->setLocalPos((int)(0.95 * (width - hapticDeviceLabel->getWidth())), 75);
+
+	toolPosLabel->setText("Tool Position: " + tool->getLocalPos().str());
+	toolPosLabel->setLocalPos((int)(0.95 * (width - toolPosLabel->getWidth())), 50);
+
 
 	cColorb color;
 
@@ -618,7 +684,7 @@ void updateGraphics(void)
 		"Color at collision: " +
 		to_string(color.getR()) + ", " + to_string(color.getG()) + ", " + to_string(color.getB())
 	);
-	colorCollisionLabel->setLocalPos((int)(0.2 * (width - colorCollisionLabel->getWidth())), height - 15);
+	colorCollisionLabel->setLocalPos((int)(0.1 * (width - colorCollisionLabel->getWidth())), height - 15);
 
 
 	color = proxyAlgorithm->m_heightAtCollision;
@@ -627,7 +693,7 @@ void updateGraphics(void)
 		"Height at collision: " +
 		to_string(color.getR()) + ", " + to_string(color.getG()) + ", " + to_string(color.getB())
 	);
-	heightCollisionLabel->setLocalPos((int)(0.4 * (width - heightCollisionLabel->getWidth())), height - 15);
+	heightCollisionLabel->setLocalPos((int)(0.1 * (width - heightCollisionLabel->getWidth())), height - 40);
 
 
 	color = proxyAlgorithm->m_roughnessAtCollision;
@@ -636,7 +702,7 @@ void updateGraphics(void)
 		"Roughness at collision: " +
 		to_string(color.getR()) + ", " + to_string(color.getG()) + ", " + to_string(color.getB())
 	);
-	roughnessCollisionLabel->setLocalPos((int)(0.6 * (width - roughnessCollisionLabel->getWidth())), height - 15);
+	roughnessCollisionLabel->setLocalPos((int)(0.1 * (width - roughnessCollisionLabel->getWidth())), height - 65);
 
 
 	color = proxyAlgorithm->m_normalColorAtCollision;
@@ -645,76 +711,83 @@ void updateGraphics(void)
 		"Normal at collision: " +
 		to_string(color.getR()) + ", " + to_string(color.getG()) + ", " + to_string(color.getB())
 	);
-	normalCollisionLabel->setLocalPos((int)(0.8 * (width - normalCollisionLabel->getWidth())), height - 15);
+	normalCollisionLabel->setLocalPos((int)(0.1 * (width - normalCollisionLabel->getWidth())), height - 90);
 
 
-    /////////////////////////////////////////////////////////////////////
-    // RENDER SCENE
-    /////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////
+	// RENDER SCENE
+	/////////////////////////////////////////////////////////////////////
 
-    // update shadow maps (if any)
-    world->updateShadowMaps(false, mirroredDisplay);
+	// update shadow maps (if any)
+	world->updateShadowMaps(false, mirroredDisplay);
 
-    // render world
-    camera->renderView(width, height);
+	// render world
+	camera->renderView(width, height);
 
-    // wait until all GL commands are completed
-    glFinish();
+	// wait until all GL commands are completed
+	glFinish();
 
-    // check for any OpenGL errors
-    GLenum err;
-    err = glGetError();
-    if (err != GL_NO_ERROR) cout << "Error:  %s\n" << gluErrorString(err);
+	// check for any OpenGL errors
+	GLenum err;
+	err = glGetError();
+	if (err != GL_NO_ERROR) cout << "Error:  %s\n" << gluErrorString(err);
 }
 
 //------------------------------------------------------------------------------
 
 void updateHaptics(void)
 {
-    // simulation in now running
-    simulationRunning  = true;
-    simulationFinished = false;
+	// simulation in now running
+	simulationRunning = true;
+	simulationFinished = false;
 
-    // main haptic simulation loop
-    while(simulationRunning)
-    {
-        /////////////////////////////////////////////////////////////////////
-        // READ HAPTIC DEVICE
-        /////////////////////////////////////////////////////////////////////
+	// main haptic simulation loop
+	while (simulationRunning)
+	{
+		/////////////////////////////////////////////////////////////////////
+		// READ HAPTIC DEVICE
+		/////////////////////////////////////////////////////////////////////
 
-        // read position 
+		// read position 
 		cVector3d toolPos = tool->getLocalPos();
 		cVector3d position;
-        hapticDevice->getPosition(position);
+		hapticDevice->getPosition(position);
 
-        // read orientation 
-        cMatrix3d rotation;
-        hapticDevice->getRotation(rotation);
+		// read orientation 
+		cMatrix3d rotation;
+		hapticDevice->getRotation(rotation);
 
-        // read user-switch status (button 0)
-        bool button = false;
-        hapticDevice->getUserSwitch(0, button);
+		// read user-switch status (button 0)
+		bool button = false;
+		hapticDevice->getUserSwitch(0, button);
 
 
-        world->computeGlobalPositions();
+		world->computeGlobalPositions();
 
-        /////////////////////////////////////////////////////////////////////
-        // UPDATE 3D CURSOR MODEL
-        /////////////////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////////
+		// UPDATE 3D CURSOR MODEL
+		/////////////////////////////////////////////////////////////////////
 
-        tool->updateFromDevice();
+		tool->updateFromDevice();
 
 
 		/////////////////////////////////////////////////////////////////////
 		// UPDATE CAMERA WITH RESPECT TO AVATAR POSITION
 		/////////////////////////////////////////////////////////////////////
 
+		position = cVector3d(position.x(), position.y(), 0.0);
+
+		if (position.x() < 0.0)
+			position = cVector3d(position.x() - 0.01, position.y(), 0.0);
+		else
+			position = cVector3d(position.x() + 0.05, position.y(), 0.0);
 
 		chai3d::cVector3d positionDirection = position;
 		positionDirection.normalize();
 		if (position.length() > workspaceRadius)
 		{
-			tool->setLocalPos(tool->getLocalPos() + positionDirection * (position.length() - workspaceRadius));
+			tool->setLocalPos(tool->getLocalPos() + positionDirection * min((max((position.length() - workspaceRadius) * 0.015, 0.00001)), 0.0001));
+			//			tool->setLocalPos(tool->getLocalPos() + positionDirection * (position.length() - workspaceRadius) * 0.01);
 
 			// A) The camera mimics the avatar's movement along the x and y plane.
 			cVector3d toolPosDxDy = tool->getLocalPos() - toolPos;
@@ -731,34 +804,34 @@ void updateHaptics(void)
 			);
 			// End A)
 		}
-		
-
-		
 
 
-        /////////////////////////////////////////////////////////////////////
-        // COMPUTE FORCES
-        /////////////////////////////////////////////////////////////////////
-
-        tool->computeInteractionForces();
-
-        cVector3d force(0, 0, 0);
-        cVector3d torque(0, 0, 0);
-        double gripperForce = 0.0;
 
 
-        /////////////////////////////////////////////////////////////////////
-        // APPLY FORCES
-        /////////////////////////////////////////////////////////////////////
 
-        tool->applyToDevice();
+		/////////////////////////////////////////////////////////////////////
+		// COMPUTE FORCES
+		/////////////////////////////////////////////////////////////////////
 
-        // signal frequency counter
-        freqCounterHaptics.signal(1);
-    }
-    
-    // exit haptics thread
-    simulationFinished = true;
+		tool->computeInteractionForces();
+
+		cVector3d force(0, 0, 0);
+		cVector3d torque(0, 0, 0);
+		double gripperForce = 0.0;
+
+
+		/////////////////////////////////////////////////////////////////////
+		// APPLY FORCES
+		/////////////////////////////////////////////////////////////////////
+
+		tool->applyToDevice();
+
+		// signal frequency counter
+		freqCounterHaptics.signal(1);
+	}
+
+	// exit haptics thread
+	simulationFinished = true;
 }
 
 //------------------------------------------------------------------------------

@@ -34,13 +34,17 @@ public:
     // [CPSC.86] CUSTOM MATERIAL PROPERTIES
     //--------------------------------------------------------------------------
 
-	double baseStaticFriction = 0.0;
-	double baseDynamicFriction = 0.0;
+	double baseStaticFriction;
+	double baseDynamicFriction;
 
 	double maxStaticFriction = 2.0;
 	double maxDynamicFriction = 1.7;
 
+	chai3d::cTexture2dPtr normalMap;
+	chai3d::cTexture2dPtr heightMap;
+	chai3d::cTexture2dPtr roughnessMap;
 
+	int objectID;
 
     double m_myMaterialProperty;
 };
