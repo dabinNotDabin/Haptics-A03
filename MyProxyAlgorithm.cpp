@@ -121,34 +121,92 @@ void MyProxyAlgorithm::updateForce()
 			}
 			else if (material->objectID != 5)
 			{
-				std::cout << "Here Update Forces OthersA\n";
+				cVector3d deltaH, deltaHx, deltaHy, deltaHz, meshSurfaceNormal;
+				double epsilon, penetrationDepth, height;
+				cVector3d 
+					texCoord_XplusE_YZ, texCoord_XminusE_YZ, 
+					texCoordX_YPlusE_Z, texCoordX_YminusE_Z,
+					texCoordXY_ZPlusE, texCoordXY_ZminusE;
+
+				cColorb colorXplusE, colorXminusE, colorYplusE, colorYminusE, colorZplusE, colorZminusE;
+
+				double hXplusE, hXminusE, hYplusE, hYminusE, hZplusE, hZminusE;
+
+				epsilon = 0.01;
+
+				// Calculate pixel locations for texture coordinates shifted by epsilon along coorinate axes
+				// in both directions for each of the three axes.
+				texCoord_XplusE_YZ = cVector3d(texCoord.x() + epsilon, texCoord.y(), texCoord.z());
+				texCoord_XminusE_YZ = cVector3d(texCoord.x() - epsilon, texCoord.y(), texCoord.z());
+				texCoordX_YPlusE_Z = cVector3d(texCoord.x(), texCoord.y() + epsilon, texCoord.z());
+				texCoordX_YminusE_Z = cVector3d(texCoord.x(), texCoord.y() - epsilon, texCoord.z());
+				texCoordXY_ZPlusE = cVector3d(texCoord.x(), texCoord.y(), texCoord.z() + epsilon);
+				texCoordXY_ZminusE = cVector3d(texCoord.x(), texCoord.y(), texCoord.z() - epsilon);
+
+				// Get the color values at those locations.
+				material->heightMap->m_image->getPixelLocationInterpolated(texCoord_XplusE_YZ, pixelX, pixelY, true);
+				material->heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, colorXplusE);
+
+				material->heightMap->m_image->getPixelLocationInterpolated(texCoord_XminusE_YZ, pixelX, pixelY, true);
+				material->heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, colorXminusE);
+
+				material->heightMap->m_image->getPixelLocationInterpolated(texCoordX_YPlusE_Z, pixelX, pixelY, true);
+				material->heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, colorYplusE);
+
+				material->heightMap->m_image->getPixelLocationInterpolated(texCoordX_YminusE_Z, pixelX, pixelY, true);
+				material->heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, colorYminusE);
+
+				material->heightMap->m_image->getPixelLocationInterpolated(texCoordXY_ZPlusE, pixelX, pixelY, true);
+				material->heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, colorZplusE);
+
+				material->heightMap->m_image->getPixelLocationInterpolated(texCoordXY_ZminusE, pixelX, pixelY, true);
+				material->heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, colorZminusE);
+
+
+				// Calculate the gradient (deltaH) using those color values.
+				hXplusE = colorXplusE.getLuminance() / 255.0;
+				hXminusE = colorXminusE.getLuminance() / 255.0;
+
+				hYplusE = colorYplusE.getLuminance() / 255.0;
+				hYminusE = colorYminusE.getLuminance() / 255.0;
+
+				hZplusE = color.getLuminance() / 255.0;
+				hZminusE = color.getLuminance() / 255.0;
+	
+
+				deltaHx = ((hXplusE - hXminusE) / (2.0*epsilon)) * cVector3d(1.0, 0.0, 0.0);
+				deltaHy = ((hYplusE - hYminusE) / (2.0*epsilon)) * cVector3d(0.0, 1.0, 0.0);
+				deltaHz = ((hZplusE - hZminusE) / (2.0*epsilon)) * cVector3d(0.0, 0.0, 1.0);
+				
+
+				deltaH = deltaHx + deltaHy + deltaHz;
+
+				
 				material->normalMap->m_image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
 				material->normalMap->m_image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
-
 				m_normalColorAtCollision = pixelColor;
-
-				perturbedNormal = cVector3d(pixelColor.getR() / 255.0, pixelColor.getG() / 255.0, pixelColor.getB() / 255.0);
-
-				double height = 0.0;
-			
-				std::cout << "Here Update Forces OthersB\n";
+				meshSurfaceNormal = cVector3d(pixelColor.getB(), pixelColor.getR(), pixelColor.getG());
+				meshSurfaceNormal.normalize();
+				
+				perturbedNormal = meshSurfaceNormal - deltaH + (deltaH.dot(surfaceNormal))*surfaceNormal;
+				
+				penetrationDepth = (m_proxyGlobalPos - m_deviceGlobalPos).length();
 
 				material->heightMap->m_image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
 				material->heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
+				height = pixelColor.getLuminance() / 255.0;
 
-				std::cout << "Here Update Forces OthersC\n";
-
-				m_heightAtCollision = pixelColor;
-
-				double r, g, b;
-				r = pixelColor.getR();
-				g = pixelColor.getG();
-				b = pixelColor.getB();
-
-				height = (r + g + b) / 255.0*3.0;
-
-				perturbedNormal.normalize();
-				m_lastGlobalForce = perturbedNormal * m_lastGlobalForce.length() + perturbedNormal * height;
+				double perturbationFactor = material->smoothnessConstant * height;
+				if (penetrationDepth > perturbationFactor)
+				{
+					m_lastGlobalForce =
+						(penetrationDepth - perturbationFactor)*surfaceNormal +
+						perturbationFactor * perturbedNormal;
+				}
+				else
+				{
+					m_lastGlobalForce = penetrationDepth * perturbedNormal;
+				}
 			}
 		}
     }
@@ -253,7 +311,7 @@ void MyProxyAlgorithm::testFrictionAndMoveProxy(const cVector3d& a_goal,
 
 			double maxStaticFriction = 2.0;
 			double maxDynamicFriction = 1.5;
-			double roughness = (r + g + b) / 3.0;
+			double roughness = (r + g + b) / (3.0*255.0);
 
 			a_parent->setFriction(maxStaticFriction * roughness, maxDynamicFriction * roughness, true);
 		}

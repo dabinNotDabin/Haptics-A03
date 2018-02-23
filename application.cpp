@@ -416,6 +416,7 @@ int main(int argc, char* argv[])
 			material->objectID = i*3 + j;
 			material->baseStaticFriction = 0.5;
 			material->baseDynamicFriction = 0.3;
+			material->smoothnessConstant = 1.5;
 
 //			mesh->setShowNormals(true);
 

@@ -47,6 +47,8 @@ public:
 	int objectID;
 
     double m_myMaterialProperty;
+
+	double smoothnessConstant;
 };
 
 //------------------------------------------------------------------------------
