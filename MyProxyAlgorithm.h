@@ -30,6 +30,12 @@ public:
 	chai3d::cColorb m_heightAtCollision;
 	chai3d::cColorb m_normalColorAtCollision;
 
+	chai3d::cVector3d surfaceNormal;
+	chai3d::cVector3d perturbedNorm;
+	chai3d::cVector3d deltaHVector;
+	double penDepthDebug, dHx, dHy, dHz;
+
+
 protected:
 
 

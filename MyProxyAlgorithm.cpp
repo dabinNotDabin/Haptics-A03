@@ -111,13 +111,34 @@ void MyProxyAlgorithm::updateForce()
 				if (distance < 0.0)
 					distance = 1.0 + distance;
 
-				double yVariant = sin(19.5*M_PI*distance);
+				double yVariant = sin(0.7 + 19.5*M_PI*distance);
+				double negator = sin(0.7 +1.5*M_PI + 19.5*M_PI*distance);
+//				double yVariant = sin(0.5 + 49.0*M_PI*distance);
+
 //				std::cout << "Sin Tex coord Clamped: " << yVariant << std::endl;
 
+				dHx = yVariant;
+				dHy = negator;
+
 				double magnitudeOfForce = m_lastGlobalForce.length();
-				m_lastGlobalForce += cVector3d(0.0, yVariant*2.0, 0.0);
+
+				if (yVariant > 0.0)
+				{
+					yVariant = 1.0 - yVariant;
+
+					if (negator < 0.0)
+						yVariant *= -1.0;
+
+					magnitudeOfForce += height * 2.0;
+				}
+				else
+					yVariant = 0.0;
+
+				m_lastGlobalForce += cVector3d(0.0, yVariant*1.5, 0.0);
 				m_lastGlobalForce.normalize();
-				m_lastGlobalForce = m_lastGlobalForce * (magnitudeOfForce + height*3.0);
+				m_lastGlobalForce = m_lastGlobalForce * magnitudeOfForce;
+
+
 			}
 			else if (material->objectID != 5)
 			{
@@ -145,68 +166,143 @@ void MyProxyAlgorithm::updateForce()
 
 				// Get the color values at those locations.
 				material->heightMap->m_image->getPixelLocationInterpolated(texCoord_XplusE_YZ, pixelX, pixelY, true);
-				material->heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, colorXplusE);
+				material->heightMap->m_image->getPixelColor(pixelX, pixelY, colorXplusE);
 
 				material->heightMap->m_image->getPixelLocationInterpolated(texCoord_XminusE_YZ, pixelX, pixelY, true);
-				material->heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, colorXminusE);
+				material->heightMap->m_image->getPixelColor(pixelX, pixelY, colorXminusE);
 
 				material->heightMap->m_image->getPixelLocationInterpolated(texCoordX_YPlusE_Z, pixelX, pixelY, true);
-				material->heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, colorYplusE);
+				material->heightMap->m_image->getPixelColor(pixelX, pixelY, colorYplusE);
 
 				material->heightMap->m_image->getPixelLocationInterpolated(texCoordX_YminusE_Z, pixelX, pixelY, true);
-				material->heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, colorYminusE);
+				material->heightMap->m_image->getPixelColor(pixelX, pixelY, colorYminusE);
 
 				material->heightMap->m_image->getPixelLocationInterpolated(texCoordXY_ZPlusE, pixelX, pixelY, true);
-				material->heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, colorZplusE);
+				material->heightMap->m_image->getPixelColor(pixelX, pixelY, colorZplusE);
 
 				material->heightMap->m_image->getPixelLocationInterpolated(texCoordXY_ZminusE, pixelX, pixelY, true);
-				material->heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, colorZminusE);
+				material->heightMap->m_image->getPixelColor(pixelX, pixelY, colorZminusE);
+
+
+				//material->heightMap->m_image->getPixelLocation(texCoord_XplusE_YZ, pX, pY, true);
+				//material->heightMap->m_image->getPixelColor(pX, pY, colorXplusE);
+
+				//material->heightMap->m_image->getPixelLocation(texCoord_XminusE_YZ, pX, pY, true);
+				//material->heightMap->m_image->getPixelColor(pX, pY, colorXminusE);
+
+				//material->heightMap->m_image->getPixelLocation(texCoordX_YPlusE_Z, pX, pY, true);
+				//material->heightMap->m_image->getPixelColor(pX, pY, colorYplusE);
+
+				//material->heightMap->m_image->getPixelLocation(texCoordX_YminusE_Z, pX, pY, true);
+				//material->heightMap->m_image->getPixelColor(pX, pY, colorYminusE);
+
+				//material->heightMap->m_image->getPixelLocation(texCoordXY_ZPlusE, pX, pY, true);
+				//material->heightMap->m_image->getPixelColor(pX, pY, colorZplusE);
+
+				//material->heightMap->m_image->getPixelLocation(texCoordXY_ZminusE, pX, pY, true);
+				//material->heightMap->m_image->getPixelColor(pX, pY, colorZminusE);
+
 
 
 				// Calculate the gradient (deltaH) using those color values.
-				hXplusE = colorXplusE.getLuminance() / 255.0;
-				hXminusE = colorXminusE.getLuminance() / 255.0;
+				hXplusE = (colorXplusE.getLuminance() - 20) / 255.0;
+				hXminusE = (colorXminusE.getLuminance() - 20) / 255.0;
 
-				hYplusE = colorYplusE.getLuminance() / 255.0;
-				hYminusE = colorYminusE.getLuminance() / 255.0;
+				hYplusE = (colorYplusE.getLuminance() - 20) / 255.0;
+				hYminusE = (colorYminusE.getLuminance() - 20) / 255.0;
 
-				hZplusE = color.getLuminance() / 255.0;
-				hZminusE = color.getLuminance() / 255.0;
-	
+				hZplusE = (colorZplusE.getLuminance() - 20) / 255.0;
+				hZminusE = (colorZminusE.getLuminance() - 20) / 255.0;
 
-				deltaHx = ((hXplusE - hXminusE) / (2.0*epsilon)) * cVector3d(1.0, 0.0, 0.0);
-				deltaHy = ((hYplusE - hYminusE) / (2.0*epsilon)) * cVector3d(0.0, 1.0, 0.0);
+				hXplusE = ((hXplusE > 0.0) ? hXplusE : 0.0);
+				hXminusE = ((hXminusE > 0.0) ? hXminusE : 0.0);
+				hYplusE = ((hYplusE > 0.0) ? hYplusE : 0.0);
+				hYminusE = ((hYminusE > 0.0) ? hYminusE : 0.0);
+				hZplusE = ((hZplusE > 0.0) ? hZplusE : 0.0);
+				hZminusE = ((hZminusE > 0.0) ? hZminusE : 0.0);
+
+				m_heightAtCollision = colorXplusE;
+
+				deltaHx = ((hXplusE - hXminusE) / (2.0*epsilon)) * cVector3d(0.0, -1.0, 0.0);
+				deltaHy = ((hYplusE - hYminusE) / (2.0*epsilon)) * cVector3d(1.0, 0.0, 0.0);
 				deltaHz = ((hZplusE - hZminusE) / (2.0*epsilon)) * cVector3d(0.0, 0.0, 1.0);
-				
+
+				//deltaHx = ((((hXplusE - hXminusE) > (hXminusE - hXplusE)) ? (hXplusE - hXminusE) : (hXminusE - hXplusE)) / (2.0*epsilon)) * cVector3d(1.0, 0.0, 0.0);
+				//deltaHy = ((((hYplusE - hYminusE) > (hYminusE - hYplusE)) ? (hYplusE - hYminusE) : (hYminusE - hYplusE)) / (2.0*epsilon)) * cVector3d(0.0, 1.0, 0.0);
+				//deltaHz = ((((hZplusE - hZminusE) > (hZminusE - hZplusE)) ? (hZplusE - hZminusE) : (hZminusE - hZplusE)) / (2.0*epsilon)) * cVector3d(0.0, 0.0, 1.0);
+
+				//dHx = deltaHx.y();
+				//dHy = deltaHy.x();
+				//dHz = deltaHz.z();
+
+				//dHx = colorXplusE.getLuminance() - 20;
+				//dHy = colorXminusE.getLuminance() - 20;
+				//dHz = deltaHz.z();
+
 
 				deltaH = deltaHx + deltaHy + deltaHz;
+				if (deltaH.length() > 1.0)
+					deltaH.normalize();
+				deltaHVector = deltaH;
 
-				
+
 				material->normalMap->m_image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
 				material->normalMap->m_image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
-				m_normalColorAtCollision = pixelColor;
-				meshSurfaceNormal = cVector3d(pixelColor.getB(), pixelColor.getR(), pixelColor.getG());
+//				m_normalColorAtCollision = pixelColor;
+//				meshSurfaceNormal = cVector3d(pixelColor.getB(), pixelColor.getR(), pixelColor.getG());
+//				meshSurfaceNormal.normalize();
+
+				meshSurfaceNormal = computeShadedSurfaceNormal(c0);
 				meshSurfaceNormal.normalize();
-				
-				perturbedNormal = meshSurfaceNormal - deltaH + (deltaH.dot(surfaceNormal))*surfaceNormal;
-				
+				surfaceNormal = meshSurfaceNormal;
+
+//				deltaH = cVector3d(deltaH.x(), deltaH.y(), meshSurfaceNormal.z());
+
+//				perturbedNormal = meshSurfaceNormal - deltaH + (deltaH.dot(meshSurfaceNormal))*meshSurfaceNormal;
+//				perturbedNormal = deltaH;
+				perturbedNormal = meshSurfaceNormal + deltaH;
+				perturbedNormal.normalize();
+				perturbedNorm = perturbedNormal;
+
+
 				penetrationDepth = (m_proxyGlobalPos - m_deviceGlobalPos).length();
 
 				material->heightMap->m_image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
 				material->heightMap->m_image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
 				height = pixelColor.getLuminance() / 255.0;
 
-				double perturbationFactor = material->smoothnessConstant * height;
-				if (penetrationDepth > perturbationFactor)
+				penetrationDepth += height;
+				penDepthDebug = penetrationDepth;
+
+				double perturbedNormalFactor = material->smoothnessConstant * height;
+				double meshNormalFactor = penetrationDepth - perturbedNormalFactor;
+
+				meshNormalFactor = ((meshNormalFactor >= 0.0) ? meshNormalFactor : 0.0);
+							
+				dHx = meshNormalFactor;
+				dHy = perturbedNormalFactor;
+				dHz = material->smoothnessConstant;
+
+				
+				
+				double forceMagnitude = m_lastGlobalForce.length();
+				if (penetrationDepth > perturbedNormalFactor)
 				{
-					m_lastGlobalForce =
-						(penetrationDepth - perturbationFactor)*surfaceNormal +
-						perturbationFactor * perturbedNormal;
+					m_lastGlobalForce =  
+						(penetrationDepth - perturbedNormalFactor)*meshSurfaceNormal +
+						perturbedNormalFactor * perturbedNormal;
+					m_lastGlobalForce.normalize();
 				}
 				else
 				{
-					m_lastGlobalForce = penetrationDepth * perturbedNormal;
+					m_lastGlobalForce = perturbedNormalFactor * perturbedNormal;
 				}
+
+				m_lastGlobalForce = cVector3d(m_lastGlobalForce.x(), m_lastGlobalForce.y(), m_lastGlobalForce.z());
+
+				m_lastGlobalForce *= forceMagnitude;
+
+//				std::cout << "Last Global Force: " << m_lastGlobalForce.str() << std::endl;
 			}
 		}
     }
@@ -298,22 +394,24 @@ void MyProxyAlgorithm::testFrictionAndMoveProxy(const cVector3d& a_goal,
 		}
 		else if (material->objectID != 3)
 		{
-			std::cout << "Here Friction OthersA.\n";
+			//std::cout << "Here Friction OthersA.\n";
 
-			material->roughnessMap->m_image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
-			material->roughnessMap->m_image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
+			//material->roughnessMap->m_image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
+			//material->roughnessMap->m_image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
 
-			r = pixelColor.getR();
-			g = pixelColor.getG();
-			b = pixelColor.getB();
+			//m_roughnessAtCollision = pixelColor;
 
-			//				material->maxStaticFriction
+			//r = pixelColor.getR();
+			//g = pixelColor.getG();
+			//b = pixelColor.getB();
 
-			double maxStaticFriction = 2.0;
-			double maxDynamicFriction = 1.5;
-			double roughness = (r + g + b) / (3.0*255.0);
+			////				material->maxStaticFriction
 
-			a_parent->setFriction(maxStaticFriction * roughness, maxDynamicFriction * roughness, true);
+			//double maxStaticFriction = 2.0;
+			//double maxDynamicFriction = 1.5;
+			//double roughness = (r + g + b) / (3.0*255.0);
+
+			//a_parent->setFriction(maxStaticFriction * roughness, maxDynamicFriction * roughness, true);
 		}
 	}
 

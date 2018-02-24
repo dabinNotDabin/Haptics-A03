@@ -113,9 +113,10 @@ cLabel* roughnessCollisionLabel;
 cLabel* normalCollisionLabel;
 
 
-cLabel *toolPosLabel;
-cLabel *hapticDeviceLabel;
-cLabel *overlapLabel;
+cLabel *deltaHLabel;
+cLabel *penDepthLabel;
+cLabel *normalVectorLabel;
+cLabel *perturbedNormalVectorLabel;
 cLabel *infoLabel;
 
 
@@ -416,7 +417,42 @@ int main(int argc, char* argv[])
 			material->objectID = i*3 + j;
 			material->baseStaticFriction = 0.5;
 			material->baseDynamicFriction = 0.3;
-			material->smoothnessConstant = 1.5;
+
+			switch (material->objectID)
+			{
+				case 0: 
+					material->smoothnessConstant = 0.6;
+					break;
+				case 1: 
+					material->smoothnessConstant = 1.0;
+					break;
+				case 2:
+					material->smoothnessConstant = 0.3;
+					break;
+				case 3:
+					material->smoothnessConstant = 1.0;
+					break;
+				case 4:
+					material->smoothnessConstant = 0.3;
+					break;
+				case 5:
+					material->smoothnessConstant = 1.0;
+					break;
+				case 6:
+					material->smoothnessConstant = 0.5;
+					break;
+				case 7:
+					material->smoothnessConstant = 1.0;
+					break;
+				case 8:
+					material->smoothnessConstant = 0.15;
+					break;
+
+				default:
+					material->smoothnessConstant = 0.5;
+			}
+
+
 
 //			mesh->setShowNormals(true);
 
@@ -493,19 +529,25 @@ int main(int argc, char* argv[])
 
 
 
-	hapticDeviceLabel = new cLabel(font);
-	hapticDeviceLabel->m_fontColor.setWhite();
-	camera->m_frontLayer->addChild(hapticDeviceLabel);
+	penDepthLabel = new cLabel(font);
+	penDepthLabel->m_fontColor.setWhite();
+	camera->m_frontLayer->addChild(penDepthLabel);
 
 
-	toolPosLabel = new cLabel(font);
-	toolPosLabel->m_fontColor.setWhite();
-	camera->m_frontLayer->addChild(toolPosLabel);
+	deltaHLabel = new cLabel(font);
+	deltaHLabel->m_fontColor.setWhite();
+	camera->m_frontLayer->addChild(deltaHLabel);
 
 
-	overlapLabel = new cLabel(font);
-	overlapLabel->m_fontColor.setWhite();
-	camera->m_frontLayer->addChild(overlapLabel);
+	normalVectorLabel = new cLabel(font);
+	normalVectorLabel->m_fontColor.setWhite();
+	camera->m_frontLayer->addChild(normalVectorLabel);
+
+
+	perturbedNormalVectorLabel = new cLabel(font);
+	perturbedNormalVectorLabel->m_fontColor.setWhite();
+	camera->m_frontLayer->addChild(perturbedNormalVectorLabel);
+
 
 	infoLabel = new cLabel(font);
 	infoLabel->m_fontColor.setWhite();
@@ -658,24 +700,30 @@ void updateGraphics(void)
 	// UPDATE WIDGETS
 	/////////////////////////////////////////////////////////////////////
 
-	cVector3d position;
-	hapticDevice->getPosition(position);
-
 	// update haptic and graphic rate data
 	labelRates->setText(cStr(freqCounterGraphics.getFrequency(), 0) + " Hz / " +
 		cStr(freqCounterHaptics.getFrequency(), 0) + " Hz");
-
-	// update position of label
 	labelRates->setLocalPos((int)(0.5 * (width - labelRates->getWidth())), 15);
 
-	position = cVector3d(position.x(), position.y(), 0.0);
+	penDepthLabel->setText("Penetration Depth: " + to_string(proxyAlgorithm->penDepthDebug));
+	penDepthLabel->setLocalPos((int)(0.5 * (width - penDepthLabel->getWidth())), 95);
 
-	hapticDeviceLabel->setText("Haptic Device: Position / Length / Workspace Radius  --  " + position.str() + " // " + to_string(position.length()) + " // " + to_string(workspaceRadius));
-	hapticDeviceLabel->setLocalPos((int)(0.95 * (width - hapticDeviceLabel->getWidth())), 75);
+	deltaHLabel->setText("DeltaH: " + proxyAlgorithm->deltaHVector.str());
+	deltaHLabel->setLocalPos((int)(0.5 * (width - deltaHLabel->getWidth())), 75);
 
-	toolPosLabel->setText("Tool Position: " + tool->getLocalPos().str());
-	toolPosLabel->setLocalPos((int)(0.95 * (width - toolPosLabel->getWidth())), 50);
+	normalVectorLabel->setText("Normal At Collision: " + proxyAlgorithm->surfaceNormal.str());
+	normalVectorLabel->setLocalPos((int)(0.5 * (width - normalVectorLabel->getWidth())), 55);
 
+	perturbedNormalVectorLabel->setText("Perturbed Normal At Collision: " + proxyAlgorithm->perturbedNorm.str());
+	perturbedNormalVectorLabel->setLocalPos((int)(0.5 * (width - perturbedNormalVectorLabel->getWidth())), 35);
+
+	infoLabel->setText
+	(
+		"DeltaHx: " + to_string(proxyAlgorithm->dHx) + "\n" +
+		"DeltaHy: " + to_string(proxyAlgorithm->dHy) + "\n" +
+		"DeltaHz: " + to_string(proxyAlgorithm->dHz)
+	);
+	infoLabel->setLocalPos((int)(0.1 * (width - infoLabel->getWidth())), 100);
 
 	cColorb color;
 
@@ -781,7 +829,7 @@ void updateHaptics(void)
 		if (position.x() < 0.0)
 			position = cVector3d(position.x() - 0.01, position.y(), 0.0);
 		else
-			position = cVector3d(position.x() + 0.05, position.y(), 0.0);
+			position = cVector3d(position.x() + 0.02, position.y(), 0.0);
 
 		chai3d::cVector3d positionDirection = position;
 		positionDirection.normalize();
