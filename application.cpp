@@ -116,6 +116,7 @@ cLabel* normalCollisionLabel;
 cLabel *deltaHLabel;
 cLabel *penDepthLabel;
 cLabel *normalVectorLabel;
+cLabel *normalMapNormalLabel;
 cLabel *perturbedNormalVectorLabel;
 cLabel *infoLabel;
 
@@ -544,6 +545,11 @@ int main(int argc, char* argv[])
 	camera->m_frontLayer->addChild(normalVectorLabel);
 
 
+	normalMapNormalLabel = new cLabel(font);
+	normalMapNormalLabel->m_fontColor.setWhite();
+	camera->m_frontLayer->addChild(normalMapNormalLabel);
+
+
 	perturbedNormalVectorLabel = new cLabel(font);
 	perturbedNormalVectorLabel->m_fontColor.setWhite();
 	camera->m_frontLayer->addChild(perturbedNormalVectorLabel);
@@ -711,8 +717,11 @@ void updateGraphics(void)
 	deltaHLabel->setText("DeltaH: " + proxyAlgorithm->deltaHVector.str());
 	deltaHLabel->setLocalPos((int)(0.5 * (width - deltaHLabel->getWidth())), 75);
 
-	normalVectorLabel->setText("Normal At Collision: " + proxyAlgorithm->surfaceNormal.str());
+	normalVectorLabel->setText("Normal At Collision: " + proxyAlgorithm->surfaceNorm.str());
 	normalVectorLabel->setLocalPos((int)(0.5 * (width - normalVectorLabel->getWidth())), 55);
+
+	normalMapNormalLabel->setText("Normal At Collision: " + proxyAlgorithm->normalMapNorm.str());
+	normalMapNormalLabel->setLocalPos((int)(0.5 * (width - normalMapNormalLabel->getWidth())), 55);
 
 	perturbedNormalVectorLabel->setText("Perturbed Normal At Collision: " + proxyAlgorithm->perturbedNorm.str());
 	perturbedNormalVectorLabel->setLocalPos((int)(0.5 * (width - perturbedNormalVectorLabel->getWidth())), 35);

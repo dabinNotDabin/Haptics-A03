@@ -17,6 +17,13 @@
 #include "MyProxyAlgorithm.h"
 #include "MyMaterial.h"
 
+#include <../glm/glm/vec3.hpp>
+#include <../glm/glm/gtc/matrix_transform.hpp>
+#include <../glm/glm/mat4x4.hpp>
+#include <../glm/glm/gtx/rotate_vector.hpp>
+
+
+using namespace glm;
 using namespace chai3d;
 
 //==============================================================================
@@ -148,10 +155,10 @@ void MyProxyAlgorithm::updateForce()
 			}
 			else if (material->objectID != 5)
 			{
-				cVector3d deltaH, deltaHx, deltaHy, deltaHz, meshSurfaceNormal;
+				cVector3d deltaH, deltaHx, deltaHy, deltaHz, meshSurfaceNormal, normalMapNormal, tangentAtC0;
 				double epsilon, penetrationDepth, height;
-				cVector3d 
-					texCoord_XplusE_YZ, texCoord_XminusE_YZ, 
+				cVector3d
+					texCoord_XplusE_YZ, texCoord_XminusE_YZ,
 					texCoordX_YPlusE_Z, texCoordX_YminusE_Z,
 					texCoordXY_ZPlusE, texCoordXY_ZminusE;
 
@@ -190,26 +197,6 @@ void MyProxyAlgorithm::updateForce()
 				material->heightMap->m_image->getPixelColor(pixelX, pixelY, colorZminusE);
 
 
-				//material->heightMap->m_image->getPixelLocation(texCoord_XplusE_YZ, pX, pY, true);
-				//material->heightMap->m_image->getPixelColor(pX, pY, colorXplusE);
-
-				//material->heightMap->m_image->getPixelLocation(texCoord_XminusE_YZ, pX, pY, true);
-				//material->heightMap->m_image->getPixelColor(pX, pY, colorXminusE);
-
-				//material->heightMap->m_image->getPixelLocation(texCoordX_YPlusE_Z, pX, pY, true);
-				//material->heightMap->m_image->getPixelColor(pX, pY, colorYplusE);
-
-				//material->heightMap->m_image->getPixelLocation(texCoordX_YminusE_Z, pX, pY, true);
-				//material->heightMap->m_image->getPixelColor(pX, pY, colorYminusE);
-
-				//material->heightMap->m_image->getPixelLocation(texCoordXY_ZPlusE, pX, pY, true);
-				//material->heightMap->m_image->getPixelColor(pX, pY, colorZplusE);
-
-				//material->heightMap->m_image->getPixelLocation(texCoordXY_ZminusE, pX, pY, true);
-				//material->heightMap->m_image->getPixelColor(pX, pY, colorZminusE);
-
-
-
 				// Calculate the gradient (deltaH) using those color values.
 				hXplusE = (colorXplusE.getLuminance() - 20) / 255.0;
 				hXminusE = (colorXminusE.getLuminance() - 20) / 255.0;
@@ -227,24 +214,16 @@ void MyProxyAlgorithm::updateForce()
 				hZplusE = ((hZplusE > 0.0) ? hZplusE : 0.0);
 				hZminusE = ((hZminusE > 0.0) ? hZminusE : 0.0);
 
+	
+				
+				// DEBUG
 				m_heightAtCollision = colorXplusE;
+
+
 
 				deltaHx = ((hXplusE - hXminusE) / (2.0*epsilon)) * cVector3d(0.0, -1.0, 0.0);
 				deltaHy = ((hYplusE - hYminusE) / (2.0*epsilon)) * cVector3d(1.0, 0.0, 0.0);
 				deltaHz = ((hZplusE - hZminusE) / (2.0*epsilon)) * cVector3d(0.0, 0.0, 1.0);
-
-				//deltaHx = ((((hXplusE - hXminusE) > (hXminusE - hXplusE)) ? (hXplusE - hXminusE) : (hXminusE - hXplusE)) / (2.0*epsilon)) * cVector3d(1.0, 0.0, 0.0);
-				//deltaHy = ((((hYplusE - hYminusE) > (hYminusE - hYplusE)) ? (hYplusE - hYminusE) : (hYminusE - hYplusE)) / (2.0*epsilon)) * cVector3d(0.0, 1.0, 0.0);
-				//deltaHz = ((((hZplusE - hZminusE) > (hZminusE - hZplusE)) ? (hZplusE - hZminusE) : (hZminusE - hZplusE)) / (2.0*epsilon)) * cVector3d(0.0, 0.0, 1.0);
-
-				//dHx = deltaHx.y();
-				//dHy = deltaHy.x();
-				//dHz = deltaHz.z();
-
-				//dHx = colorXplusE.getLuminance() - 20;
-				//dHy = colorXminusE.getLuminance() - 20;
-				//dHz = deltaHz.z();
-
 
 				deltaH = deltaHx + deltaHy + deltaHz;
 				if (deltaH.length() > 1.0)
@@ -254,21 +233,112 @@ void MyProxyAlgorithm::updateForce()
 
 				material->normalMap->m_image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
 				material->normalMap->m_image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
-//				m_normalColorAtCollision = pixelColor;
-//				meshSurfaceNormal = cVector3d(pixelColor.getB(), pixelColor.getR(), pixelColor.getG());
-//				meshSurfaceNormal.normalize();
+				m_normalColorAtCollision = pixelColor;
+				normalMapNormal = cVector3d(pixelColor.getB(), pixelColor.getR(), pixelColor.getG());
+				normalMapNormal.normalize();
+
+				//				unsigned int index0 = c0->m_triangles->getVertexIndex0(c0->m_index);
+				//				unsigned int index1 = c0->m_triangles->getVertexIndex1(c0->m_index);
+				//				unsigned int index2 = c0->m_triangles->getVertexIndex2(c0->m_index);
+
+				//				cVector3d vertA, vertB, edge, normalCrossEdge;
+				//				vertA = c0->m_triangles->m_vertices->getGlobalPos(index0);
+				//				vertB = c0->m_triangles->m_vertices->getGlobalPos(index1);
+
+				//				edge = vertB - vertA;
+				//				edge.normalize();
 
 				meshSurfaceNormal = computeShadedSurfaceNormal(c0);
 				meshSurfaceNormal.normalize();
-				surfaceNormal = meshSurfaceNormal;
+		
+				
+				// DEBUG
+				surfaceNorm = meshSurfaceNormal;
 
-//				deltaH = cVector3d(deltaH.x(), deltaH.y(), meshSurfaceNormal.z());
+				//				normalCrossEdge = edge;
+				//				normalCrossEdge.cross(meshSurfaceNormal);
+
+
+								// Normalize meshSurfaceNormal.
+								//		get angle between meshSurfaceNormal and 
+								//			(1, 0, 0)...(0, 1, 0)...(0, 0, 1) using the fact that
+								//			a.dot(b) = cosTheta when vectors are of unit length.
+								//		Use three angles to build rotation matrix and apply it to
+								//		the normalMapNormal to get the rotated normal
+
+				// NEW CALCULATIONS
+				float thetaX, thetaY, thetaZ;
+				thetaX = acos(meshSurfaceNormal.dot(cVector3d(1.0, 0.0, 0.0)));
+				thetaY = acos(meshSurfaceNormal.dot(cVector3d(0.0, 1.0, 0.0)));
+				thetaZ = acos(meshSurfaceNormal.dot(cVector3d(0.0, 0.0, 1.0)));
+
+
+//				vec3 glmNormalMapNormal = vec3(normalMapNormal.x(), normalMapNormal.y(), normalMapNormal.z());
+				vec3 glmNormalMapNormal = vec3(normalMapNormal.y(), normalMapNormal.z(), normalMapNormal.x());
+
+				// If normal is 80 degrees off of positive x in Chai3d, we rotate -10 degrees about positive
+				// x in glm.
+				// If normal is 170 degrees off of positive x in Chai3d, we rotate 80 degrees about positive
+				// x in glm.
+				if (thetaX < (M_PI * 0.5))
+				{
+					thetaX = (M_PI * 0.5) - thetaX;
+					thetaX = -thetaX;
+				}
+				else
+					thetaX = thetaX - (M_PI * 0.5);
+
+				vec3 xAxis = vec3(1.0, 0.0, 0.0);
+				rotate(glmNormalMapNormal, thetaX, xAxis);
+
+				// If normal is 80 degrees off of positive y in Chai3d, we rotate -10 degrees about positive
+				// z in glm.
+				// If normal is 170 degrees off of positive y in Chai3d, we rotate 80 degrees about positive
+				// z in gml
+				if (thetaY < (M_PI * 0.5))
+				{
+					thetaY = (M_PI * 0.5) - thetaY;
+					thetaY = -thetaY;
+				}
+				else
+					thetaY = thetaY - (M_PI * 0.5);
+
+				vec3 zAxis = vec3(0.0, 0.0, 1.0);
+				rotate(glmNormalMapNormal, thetaY, zAxis);
+
+
+				// If normal is 80 degrees off of positive z in Chai3d, we rotate -10 degrees about positive
+				// y in glm.
+				// If normal is 170 degrees off of positive y in Chai3d, we rotate 80 degrees about positive
+				// y in gml
+				if (thetaZ < (M_PI * 0.5))
+				{
+					thetaZ = (M_PI * 0.5) - thetaZ;
+					thetaZ = -thetaZ;
+				}
+				else
+					thetaZ = thetaZ - (M_PI * 0.5);
+
+				vec3 yAxis = vec3(0.0, 1.0, 0.0);
+				rotate(glmNormalMapNormal, thetaZ, yAxis);
+
+//				normalMapNormal = cVector3d(glmNormalMapNormal.x, glmNormalMapNormal.y, glmNormalMapNormal.z);
+				normalMapNormal = cVector3d(glmNormalMapNormal.y, glmNormalMapNormal.z, glmNormalMapNormal.x);
+
+				perturbedNormal = meshSurfaceNormal - normalMapNormal + (normalMapNormal.dot(meshSurfaceNormal))*meshSurfaceNormal;
+
+
+				// NEW CALCULATIONS END
+				
 
 //				perturbedNormal = meshSurfaceNormal - deltaH + (deltaH.dot(meshSurfaceNormal))*meshSurfaceNormal;
 //				perturbedNormal = deltaH;
 				perturbedNormal = meshSurfaceNormal + deltaH;
 				perturbedNormal.normalize();
+
+				// DEBUG
 				perturbedNorm = perturbedNormal;
+				normalMapNorm = normalMapNormal;
 
 
 				penetrationDepth = (m_proxyGlobalPos - m_deviceGlobalPos).length();
@@ -278,13 +348,18 @@ void MyProxyAlgorithm::updateForce()
 				height = pixelColor.getLuminance() / 255.0;
 
 				penetrationDepth += height;
+
+
+				// DEBUG
 				penDepthDebug = penetrationDepth;
+
 
 				double perturbedNormalFactor = material->smoothnessConstant * height;
 				double meshNormalFactor = penetrationDepth - perturbedNormalFactor;
-
 				meshNormalFactor = ((meshNormalFactor >= 0.0) ? meshNormalFactor : 0.0);
-							
+					
+
+				// DEBUG
 				dHx = meshNormalFactor;
 				dHy = perturbedNormalFactor;
 				dHz = material->smoothnessConstant;
@@ -304,11 +379,8 @@ void MyProxyAlgorithm::updateForce()
 					m_lastGlobalForce = perturbedNormalFactor * perturbedNormal;
 				}
 
-				m_lastGlobalForce = cVector3d(m_lastGlobalForce.x(), m_lastGlobalForce.y(), m_lastGlobalForce.z());
 
 				m_lastGlobalForce *= forceMagnitude;
-
-//				std::cout << "Last Global Force: " << m_lastGlobalForce.str() << std::endl;
 			}
 		}
     }
