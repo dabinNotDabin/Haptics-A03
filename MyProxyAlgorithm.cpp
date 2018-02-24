@@ -113,7 +113,6 @@ void MyProxyAlgorithm::updateForce()
 
 				double yVariant = sin(0.7 + 19.5*M_PI*distance);
 				double negator = sin(0.7 +1.5*M_PI + 19.5*M_PI*distance);
-//				double yVariant = sin(0.5 + 49.0*M_PI*distance);
 
 //				std::cout << "Sin Tex coord Clamped: " << yVariant << std::endl;
 
@@ -121,13 +120,20 @@ void MyProxyAlgorithm::updateForce()
 				dHy = negator;
 
 				double magnitudeOfForce = m_lastGlobalForce.length();
+				double blendDistance = 0.15;
+				double blendAmount = 1.0;
 
 				if (yVariant > 0.0)
 				{
+					if (yVariant < blendAmount)
+						blendAmount = yVariant / blendDistance;
+
 					yVariant = 1.0 - yVariant;
 
+					yVariant *= blendAmount;
+
 					if (negator < 0.0)
-						yVariant *= -1.0;
+						yVariant = -yVariant;
 
 					magnitudeOfForce += height * 2.0;
 				}
