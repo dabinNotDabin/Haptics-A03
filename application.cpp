@@ -331,32 +331,32 @@ int main(int argc, char* argv[])
 
 	const std::string textureFiles[3][3] = 
 	{
-		{ "Organic_Scales_001_colour.jpg", "unknown.png", "Fabric_002_colour.jpg" },
+		{ "Organic_Scales_001_colour.jpg", "Bricks_color.jpg", "Fabric_002_colour.jpg" },
 		{ "bumps.png", "Metal_plate_001_colour.jpg", "friction.jpg" },
-		{ "Leather_padded_001_colour.jpg", "unknown.png", "Cork_001_colour.jpg" }
+		{ "Leather_padded_001_colour.jpg", "Cobblestone_color.jpg", "Cork_001_colour.jpg" }
 	};
 
 	const std::string normalMaps[3][3] =
 	{
-		{ "Organic_Scales_001_normal.jpg", "unknown.png", "Fabric_002_normal.jpg" },
+		{ "Organic_Scales_001_normal.jpg", "Bricks_normal.jpg", "Fabric_002_normal.jpg" },
 		{ "bumps.png", "Metal_plate_001_normal.jpg", "friction.jpg" },
-		{ "Leather_padded_001_normal.jpg", "unknown.png", "Cork_001_normal.jpg" }
+		{ "Leather_padded_001_normal.jpg", "Cobblestone_normal.jpg", "Cork_001_normal.jpg" }
 	};
 
 
 	const std::string heightMaps[3][3] =
 	{
-		{ "Organic_Scales_001_height.jpg", "unknown.png", "Fabric_002_height.jpg" },
+		{ "Organic_Scales_001_height.jpg", "Bricks_height.jpg", "Fabric_002_height.jpg" },
 		{ "bumps.png", "Metal_plate_001_height.jpg", "friction.jpg" },
-		{ "Leather_padded_001_height.jpg", "unknown.png", "Cork_001_height.jpg" }
+		{ "Leather_padded_001_height.jpg", "Cobblestone_height.jpg", "Cork_001_height.jpg" }
 	};
 
 
 	const std::string roughnessMaps[3][3] =
 	{
-		{ "Organic_Scales_001_roughness.jpg", "unknown.png", "Fabric_002_roughness.jpg" },
+		{ "Organic_Scales_001_roughness.jpg", "Bricks_roughness.jpg", "Fabric_002_roughness.jpg" },
 		{ "bumps.png", "Metal_plate_001_roughness.jpg", "friction.jpg" },
-		{ "Leather_padded_001_roughness.jpg", "unknown.png", "Cork_001_roughness.jpg" }
+		{ "Leather_padded_001_roughness.jpg", "Cobblestone_roughness.jpg", "Cork_001_roughness.jpg" }
 	};
 
 
@@ -390,6 +390,7 @@ int main(int argc, char* argv[])
 			albedoMap->setWrapModeS(GL_REPEAT);
 			albedoMap->setWrapModeT(GL_REPEAT);
 			albedoMap->setUseMipmaps(true);
+
 
 			// assign textures to the mesh
 			mesh->m_texture = albedoMap;
@@ -426,42 +427,41 @@ int main(int argc, char* argv[])
 			material->maxDynamicFriction = 1.7;
 
 
-			// (0)Scales -- (1)Unknown -- (2)Fabric -- (3)Bumps -- (4)Metal -- (5)Friction -- (6)Leather -- (7)Unknown -- (8)Cork
 			switch (material->objectID)
 			{
-				case 0: 
+				case 0: // Scales
 					material->frictionFactor = 0.4;
 					material->smoothnessConstant = 0.6;
 					break;
-				case 1: 
-					material->frictionFactor = 1.0;
-					material->smoothnessConstant = 1.0;
+				case 1: // Bricks
+					material->frictionFactor = 0.5;
+					material->smoothnessConstant = 0.5;
 					break;
-				case 2:
+				case 2: // Fabric
 					material->frictionFactor = 0.5;
 					material->smoothnessConstant = 0.8;
 					break;
-				case 3:
+				case 3: // Procedural Bumps
 					material->frictionFactor = 0.0;
 					material->smoothnessConstant = 1.0;
 					break;
-				case 4:
+				case 4: // Metal
 					material->frictionFactor = 0.4;
 					material->smoothnessConstant = 0.85;
 					break;
-				case 5:
+				case 5: // Procedural Friction
 					material->frictionFactor = 1.0;
 					material->smoothnessConstant = 1.0;
 					break;
-				case 6:
+				case 6: // Leather Padding
 					material->frictionFactor = 0.25;
 					material->smoothnessConstant = 0.4;
 					break;
-				case 7:
-					material->frictionFactor = 1.0;
-					material->smoothnessConstant = 1.0;
+				case 7: // Cobblestone
+					material->frictionFactor = 0.5;
+					material->smoothnessConstant = 0.5;
 					break;
-				case 8:
+				case 8: // Cork
 					material->frictionFactor = 0.8;
 					material->smoothnessConstant = 0.35;
 					break;

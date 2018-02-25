@@ -174,7 +174,7 @@ void MyProxyAlgorithm::updateForce()
 			}
 			else if (material->objectID != 5)
 			{
-				cVector3d meshSurfaceNormal, normalMapNormal;
+				cVector3d meshSurfaceNormal, normalMapNormal, savedTangentialForce;
 				double epsilon, penetrationDepth, height;
 
 				savedTangentialForce = getTangentialForce();
