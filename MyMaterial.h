@@ -37,8 +37,8 @@ public:
 	double baseStaticFriction;
 	double baseDynamicFriction;
 
-	double maxStaticFriction = 2.0;
-	double maxDynamicFriction = 1.7;
+	double maxStaticFriction;
+	double maxDynamicFriction;
 
 	chai3d::cTexture2dPtr normalMap;
 	chai3d::cTexture2dPtr heightMap;
@@ -49,6 +49,7 @@ public:
     double m_myMaterialProperty;
 
 	double smoothnessConstant;
+	double frictionFactor;
 };
 
 //------------------------------------------------------------------------------

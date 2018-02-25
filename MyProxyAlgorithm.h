@@ -37,11 +37,14 @@ public:
 	chai3d::cVector3d deltaHVector;
 	double penDepthDebug, dHx, dHy, dHz;
 
+	MyProxyAlgorithm();
+	void setFrictionOn(bool iWantItOn);
 
 protected:
 
 
-
+	chai3d::cVector3d previousPerturbedNormal;
+	bool frictionOn;
 
 
     //! This method computes the resulting force which will be sent to the haptic device.

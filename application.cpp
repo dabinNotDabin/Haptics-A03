@@ -122,6 +122,15 @@ cLabel *infoLabel;
 
 
 
+
+cMesh* normalMapNormalArrow = new cMesh();
+cMesh* surfaceNormalArrow = new cMesh();
+cMesh* globalForceArrow = new cMesh();
+
+
+bool showNormals;
+bool frictionOn;
+
 //------------------------------------------------------------------------------
 // DECLARED FUNCTIONS
 //------------------------------------------------------------------------------
@@ -309,14 +318,9 @@ int main(int argc, char* argv[])
 	double toolRadius = 0.0;
 
 
-	/*
-	Initialize a mathematical constraint for the workspace in the form of a bounding box.
 
-	This will be used to guide the movement of the camera and tool position in an
-	implementation of rate control for workspace management.
-	*/
-	
-
+	showNormals = false;
+	frictionOn = false;
 
 
 	//--------------------------------------------------------------------------
@@ -416,40 +420,54 @@ int main(int argc, char* argv[])
 			material->heightMap = heightMap;
 			material->roughnessMap = roughnessMap;
 			material->objectID = i*3 + j;
-			material->baseStaticFriction = 0.5;
-			material->baseDynamicFriction = 0.3;
+			material->baseStaticFriction = 0.3;
+			material->baseDynamicFriction = 0.1;
+			material->maxStaticFriction = 2.0;
+			material->maxDynamicFriction = 1.7;
 
+
+			// (0)Scales -- (1)Unknown -- (2)Fabric -- (3)Bumps -- (4)Metal -- (5)Friction -- (6)Leather -- (7)Unknown -- (8)Cork
 			switch (material->objectID)
 			{
 				case 0: 
+					material->frictionFactor = 0.4;
 					material->smoothnessConstant = 0.6;
 					break;
 				case 1: 
+					material->frictionFactor = 1.0;
 					material->smoothnessConstant = 1.0;
 					break;
 				case 2:
-					material->smoothnessConstant = 0.3;
+					material->frictionFactor = 0.5;
+					material->smoothnessConstant = 0.8;
 					break;
 				case 3:
+					material->frictionFactor = 0.0;
 					material->smoothnessConstant = 1.0;
 					break;
 				case 4:
-					material->smoothnessConstant = 0.3;
+					material->frictionFactor = 0.4;
+					material->smoothnessConstant = 0.85;
 					break;
 				case 5:
+					material->frictionFactor = 1.0;
 					material->smoothnessConstant = 1.0;
 					break;
 				case 6:
-					material->smoothnessConstant = 0.5;
+					material->frictionFactor = 0.25;
+					material->smoothnessConstant = 0.4;
 					break;
 				case 7:
+					material->frictionFactor = 1.0;
 					material->smoothnessConstant = 1.0;
 					break;
 				case 8:
-					material->smoothnessConstant = 0.15;
+					material->frictionFactor = 0.8;
+					material->smoothnessConstant = 0.35;
 					break;
 
 				default:
+					material->frictionFactor = 1.0;
 					material->smoothnessConstant = 0.5;
 			}
 
@@ -677,6 +695,18 @@ void keyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, 
 		mirroredDisplay = !mirroredDisplay;
 		camera->setMirrorVertical(mirroredDisplay);
 	}
+	else if (a_key == GLFW_KEY_N)
+	{
+		showNormals = !showNormals;
+	}
+	else if (a_key == GLFW_KEY_O)
+	{
+		frictionOn = !frictionOn;
+
+		proxyAlgorithm->setFrictionOn(frictionOn);
+	}
+
+
 }
 
 //------------------------------------------------------------------------------
@@ -706,36 +736,77 @@ void updateGraphics(void)
 	// UPDATE WIDGETS
 	/////////////////////////////////////////////////////////////////////
 
+	if (normalMapNormalArrow != NULL)
+		world->deleteChild(normalMapNormalArrow);
+	if (surfaceNormalArrow != NULL)
+		world->deleteChild(surfaceNormalArrow);
+	if (globalForceArrow != NULL)
+		world->deleteChild(globalForceArrow);
+
+	normalMapNormalArrow = new cMesh();
+	surfaceNormalArrow = new cMesh();
+	globalForceArrow = new cMesh();
+
+	cCreateArrow(normalMapNormalArrow, 0.05, 0.0002, 0.001, 0.001, false, 32, proxyAlgorithm->normalMapNorm, proxyAlgorithm->getProxyGlobalPosition(), cColorf(0.0, 1.0, 0.0, 0.0));
+	cCreateArrow(surfaceNormalArrow, 0.05, 0.0002, 0.001, 0.001, false, 32, proxyAlgorithm->surfaceNorm, proxyAlgorithm->getProxyGlobalPosition(), cColorf(0.0, 1.0, 0.0, 0.0));
+	cCreateArrow(globalForceArrow, 0.05, 0.0002, 0.001, 0.001, false, 32, proxyAlgorithm->getForce(), proxyAlgorithm->getProxyGlobalPosition(), cColorf(0.0, 1.0, 0.0, 0.0));
+
+	normalMapNormalArrow->m_material->setGreenLime();
+	surfaceNormalArrow->m_material->setBlack();
+	globalForceArrow->m_material->setRedCrimson();
+
+	if (showNormals)
+	{
+		world->addChild(normalMapNormalArrow);
+		world->addChild(surfaceNormalArrow);
+		world->addChild(globalForceArrow);
+	}
+
+
+
 	// update haptic and graphic rate data
 	labelRates->setText(cStr(freqCounterGraphics.getFrequency(), 0) + " Hz / " +
 		cStr(freqCounterHaptics.getFrequency(), 0) + " Hz");
 	labelRates->setLocalPos((int)(0.5 * (width - labelRates->getWidth())), 15);
 
-	penDepthLabel->setText("Penetration Depth: " + to_string(proxyAlgorithm->penDepthDebug));
-	penDepthLabel->setLocalPos((int)(0.5 * (width - penDepthLabel->getWidth())), 95);
+//	penDepthLabel->setText("Penetration Depth: " + to_string(proxyAlgorithm->penDepthDebug));
+//	penDepthLabel->setLocalPos((int)(0.5 * (width - penDepthLabel->getWidth())), 115);
 
-	deltaHLabel->setText("DeltaH: " + proxyAlgorithm->deltaHVector.str());
-	deltaHLabel->setLocalPos((int)(0.5 * (width - deltaHLabel->getWidth())), 75);
+//	deltaHLabel->setText("DeltaH: " + proxyAlgorithm->deltaHVector.str());
+//	deltaHLabel->setLocalPos((int)(0.5 * (width - deltaHLabel->getWidth())), 95);
 
-	normalVectorLabel->setText("Normal At Collision: " + proxyAlgorithm->surfaceNorm.str());
-	normalVectorLabel->setLocalPos((int)(0.5 * (width - normalVectorLabel->getWidth())), 55);
+//	normalVectorLabel->setText("Mesh Normal At Collision: " + proxyAlgorithm->surfaceNorm.str());
+//	normalVectorLabel->setLocalPos((int)(0.5 * (width - normalVectorLabel->getWidth())), 75);
 
-	normalMapNormalLabel->setText("Normal At Collision: " + proxyAlgorithm->normalMapNorm.str());
-	normalMapNormalLabel->setLocalPos((int)(0.5 * (width - normalMapNormalLabel->getWidth())), 55);
+//	normalMapNormalLabel->setText("Normal Map Normal At Collision: " + proxyAlgorithm->normalMapNorm.str());
+//	normalMapNormalLabel->setLocalPos((int)(0.5 * (width - normalMapNormalLabel->getWidth())), 55);
 
-	perturbedNormalVectorLabel->setText("Perturbed Normal At Collision: " + proxyAlgorithm->perturbedNorm.str());
-	perturbedNormalVectorLabel->setLocalPos((int)(0.5 * (width - perturbedNormalVectorLabel->getWidth())), 35);
+//	perturbedNormalVectorLabel->setText("Perturbed Normal At Collision: " + proxyAlgorithm->perturbedNorm.str());
+//	perturbedNormalVectorLabel->setLocalPos((int)(0.5 * (width - perturbedNormalVectorLabel->getWidth())), 35);
 
-	infoLabel->setText
-	(
-		"DeltaHx: " + to_string(proxyAlgorithm->dHx) + "\n" +
-		"DeltaHy: " + to_string(proxyAlgorithm->dHy) + "\n" +
-		"DeltaHz: " + to_string(proxyAlgorithm->dHz)
-	);
-	infoLabel->setLocalPos((int)(0.1 * (width - infoLabel->getWidth())), 100);
+	if (showNormals)
+		infoLabel->setText
+		(
+			"Friction is currently: " + string((frictionOn) ? "ON" : "OFF") + "\n" +
+			"    Press \"O\" to toggle friction." + "\n\n" +
+			"Render normals is currently: " + string((showNormals) ? "ON" : "OFF") + "\n" +
+			"    Press \"N\" to toggle normal rendering." + "\n" +
+			"    Red is the global force.\n    Black is the surface normal.\n    Green is the normal map normal."
+		);
+	else
+		infoLabel->setText
+		(
+			"Friction is currently: " + string((frictionOn) ? "ON" : "OFF") + "\n" +
+			"    Press \"O\" to toggle friction." + "\n\n" +
+			"Render normals is currently: " + string((showNormals) ? "ON" : "OFF") + "\n" +
+			"    Press \"N\" to toggle normal rendering." + "\n"
+		);
 
-	cColorb color;
+	infoLabel->setLocalPos(10, height - 200);
 
+//	cColorb color;
+
+	/*
 	color = proxyAlgorithm->m_colorAtCollision;
 	colorCollisionLabel->setText
 	(
@@ -770,7 +841,7 @@ void updateGraphics(void)
 		to_string(color.getR()) + ", " + to_string(color.getG()) + ", " + to_string(color.getB())
 	);
 	normalCollisionLabel->setLocalPos((int)(0.1 * (width - normalCollisionLabel->getWidth())), height - 90);
-
+	*/
 
 	/////////////////////////////////////////////////////////////////////
 	// RENDER SCENE
