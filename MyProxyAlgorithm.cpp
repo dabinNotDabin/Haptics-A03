@@ -104,7 +104,7 @@ void MyProxyAlgorithm::updateForce()
 				texCoord = cVector3d(texCoord.x(), 1.0 + texCoord.y(), texCoord.z());
 
 
-
+			// For Bumps texture -- procedural implementation
 			if (material->objectID == 3)
 			{
 				image = c0->m_object->m_texture->m_image;
@@ -117,6 +117,7 @@ void MyProxyAlgorithm::updateForce()
 				g = (double)pixelColor.getG();
 				b = (double)pixelColor.getB();
 
+				// Height used to scale force when passing over bumps.
 				double height = (g + b) / (255.0*2.0);
 
 
@@ -134,20 +135,22 @@ void MyProxyAlgorithm::updateForce()
 				if (distance < 0.0)
 					distance = 1.0 + distance;
 
+				// yVariant is used to vary the force in the y direction.
+				// negator is used to negate the y variant when passing over the middle of the bump.
 				double yVariant = sin(0.7 + 19.5*M_PI*distance);
 				double negator = sin(0.7 +1.5*M_PI + 19.5*M_PI*distance);
 
 //				std::cout << "Sin Tex coord Clamped: " << yVariant << std::endl;
 
-				dHx = yVariant;
-				dHy = negator;
-
+				// Save the magnitude of force.
 				double magnitudeOfForce = m_lastGlobalForce.length();
 				double blendDistance = 0.15;
 				double blendAmount = 1.0;
 
+				// yVariant is between 0 and 1 when passing over white bands.
 				if (yVariant > 0.0)
 				{
+					// Blend perturbation over short distance to avoid sharp changes in force direction.
 					if (yVariant < blendAmount)
 						blendAmount = yVariant / blendDistance;
 
@@ -158,29 +161,31 @@ void MyProxyAlgorithm::updateForce()
 					if (negator < 0.0)
 						yVariant = -yVariant;
 
+					// Use height to increase magnitude of force.
 					magnitudeOfForce += height*2.0;
 				}
 				else
 					yVariant = 0.0;
 
-
+				// Add to the y component of the global force to simulate bumps
 				m_lastGlobalForce += cVector3d(0.0, yVariant*magnitudeOfForce*0.25, 0.0);
 				m_lastGlobalForce.normalize();
 				m_lastGlobalForce = m_lastGlobalForce * magnitudeOfForce;
-
-
 			}
 			else if (material->objectID != 5)
 			{
-				cVector3d meshSurfaceNormal, normalMapNormal, savedTangentialForce;
+				cVector3d meshSurfaceNormal, normalMapNormal;
 				double epsilon, penetrationDepth, height;
-
 
 				savedTangentialForce = getTangentialForce();
 
 				material->normalMap->m_image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
 				material->normalMap->m_image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
 				m_normalColorAtCollision = pixelColor;
+
+				// Get normal relative to implicit (127.5, 127.5, 127.5) normal origin.
+				// This is because normals are directions expressed in values ranging from 0 to 255.
+				// If a value is 255, it is maximum in that direction, 0 is maximum in opposite direction.
 				normalMapNormal = cVector3d(pixelColor.getG() - 127.5, pixelColor.getR() - 127.5, pixelColor.getB() - 127.5);
 				normalMapNormal.normalize();
 
@@ -188,14 +193,15 @@ void MyProxyAlgorithm::updateForce()
 				meshSurfaceNormal = computeShadedSurfaceNormal(c0);
 				meshSurfaceNormal.normalize();
 		
-		
-				// NEW CALCULATIONS
+				
+				// Get angle between surface normal and implicit global unit axes
 				float thetaX, thetaY, thetaZ;
 				thetaX = acos(meshSurfaceNormal.dot(cVector3d(1.0, 0.0, 0.0)));
 				thetaY = acos(meshSurfaceNormal.dot(cVector3d(0.0, 1.0, 0.0)));
 				thetaZ = acos(meshSurfaceNormal.dot(cVector3d(0.0, 0.0, 1.0)));
 
-	
+				// Rotate the normal map normal by the same angle that the surface normal deviates from these
+				// axes.
 				vec3 glmNormalMapNormal = vec3(normalMapNormal.y(), normalMapNormal.z(), normalMapNormal.x());
 
 				// If normal is 80 degrees off of positive x in Chai3d, we rotate -10 degrees about positive
@@ -234,7 +240,7 @@ void MyProxyAlgorithm::updateForce()
 				normalMapNormal.normalize();
 				// NEW CALCULATIONS END
 				
-
+				// Get the height at the collision point and use to scale the penetration depth.
 				penetrationDepth = (m_proxyGlobalPos - m_deviceGlobalPos).length();
 
 				material->heightMap->m_image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
@@ -244,6 +250,7 @@ void MyProxyAlgorithm::updateForce()
 				penetrationDepth += height;
 				penetrationDepth += (1.0 - material->smoothnessConstant);
 
+				// Calculate the blending factors to blend the normal map normal with the surface normal.
 				double perturbedNormalFactor = material->smoothnessConstant * height;
 				double meshNormalFactor = penetrationDepth - perturbedNormalFactor;
 				meshNormalFactor = ((meshNormalFactor >= 0.0) ? meshNormalFactor : 0.0);
@@ -255,8 +262,10 @@ void MyProxyAlgorithm::updateForce()
 				
 
 				double forceMagnitude = m_lastGlobalForce.length();
-
 				perturbedNormal = normalMapNormal;
+
+				// If penetration depth is large, blend normal map normal with surface normal to avoid force
+				// direction discontinuitues.
 				if (penetrationDepth > perturbedNormalFactor)
 				{
 					m_lastGlobalForce =  
@@ -270,6 +279,7 @@ void MyProxyAlgorithm::updateForce()
 
 				m_lastGlobalForce = cVector3d(m_lastGlobalForce.x(), m_lastGlobalForce.y(), m_lastGlobalForce.z() + (height * (1.5 - material->smoothnessConstant)));
 				
+				// If friction is on, use the previously saved tangential force to alter the global force.
 				if (frictionOn)
 					m_lastGlobalForce += (savedTangentialForce * 0.25);
 	
@@ -332,6 +342,17 @@ void MyProxyAlgorithm::testFrictionAndMoveProxy(const cVector3d& a_goal,
 		double r, g, b;
 
 		texCoord = c0->m_triangles->getTexCoordAtPosition(c0->m_index, c0->m_localPos);
+		
+		if (texCoord.x() > 1.0)
+			texCoord = cVector3d(texCoord.x() - 1.0, texCoord.y(), texCoord.z());
+		if (texCoord.y() > 1.0)
+			texCoord = cVector3d(texCoord.x(), texCoord.y() - 1.0, texCoord.z());
+		if (texCoord.x() < 0.0)
+			texCoord = cVector3d(1.0 + texCoord.x(), texCoord.y(), texCoord.z());
+		if (texCoord.y() < 0.0)
+			texCoord = cVector3d(texCoord.x(), 1.0 + texCoord.y(), texCoord.z());
+
+		// Procedural friction modulation for rocky/blue banded texture
 		if (material->objectID == 5)
 		{
 			double distance = texCoord.y();
@@ -353,12 +374,14 @@ void MyProxyAlgorithm::testFrictionAndMoveProxy(const cVector3d& a_goal,
 			double staticFric;
 			double dynamicFric;
 
+			// Friction variant is > 0.0 when over the rocky surfaces.
 			frictionVariant = ((frictionVariant > 0.0) ? frictionVariant : 0.0);
 
 			double frictionMultiplier = pow((1.0 + frictionVariant), 3);
 			frictionMultiplier -= 1.0;
 			std::cout << "Friction Multiplier: " << frictionMultiplier << std::endl;
 
+			// Use friction variant to modulate fricton.
 			staticFric = material->baseStaticFriction * frictionMultiplier;
 			dynamicFric = material->baseDynamicFriction * frictionMultiplier;
 			
@@ -366,6 +389,7 @@ void MyProxyAlgorithm::testFrictionAndMoveProxy(const cVector3d& a_goal,
 		}
 		else if (material->objectID != 3)
 		{
+			// Get the roughness value from the roughness map.
 			material->roughnessMap->m_image->getPixelLocationInterpolated(texCoord, pixelX, pixelY, true);
 			material->roughnessMap->m_image->getPixelColorInterpolated(pixelX, pixelY, pixelColor);
 
@@ -379,11 +403,7 @@ void MyProxyAlgorithm::testFrictionAndMoveProxy(const cVector3d& a_goal,
 
 			roughness *= 0.25;
 
-			// DEBUG
-			dHx = roughness;
-			dHy = material->maxStaticFriction * roughness;
-			dHz = material->maxDynamicFriction * roughness;
-
+			// Modulate friction using material properties and roughness map values.
 			if (frictionOn)
 				a_parent->setFriction(material->maxStaticFriction * roughness * material->frictionFactor, material->maxDynamicFriction * roughness * material->frictionFactor, true);
 			else
